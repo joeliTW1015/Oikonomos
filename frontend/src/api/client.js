@@ -24,6 +24,10 @@ export async function fetchTasks(month) {
   return request(`/tasks?month=${encodeURIComponent(month)}`);
 }
 
+export async function fetchTaskHistory(id) {
+  return request(`/tasks/${id}/history`);
+}
+
 export async function createTask(payload) {
   return request("/tasks", {
     method: "POST",
@@ -55,6 +59,13 @@ export async function fetchEvents(month) {
 export async function createEvent(payload) {
   return request("/events", {
     method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateEvent(id, payload) {
+  return request(`/events/${id}`, {
+    method: "PUT",
     body: JSON.stringify(payload)
   });
 }

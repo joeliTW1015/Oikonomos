@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Calendar from "./components/Calendar.jsx";
 import DayTasks from "./components/DayTasks.jsx";
 import DayEvents from "./components/DayEvents.jsx";
-import { createTask, deleteTask, fetchTasks, updateTask, fetchEvents, createEvent, deleteEvent } from "./api/client.js";
+import { createTask, deleteTask, fetchTasks, updateTask, fetchEvents, createEvent, updateEvent, deleteEvent } from "./api/client.js";
 import { groupTasksByDate, groupEventsByDate } from "./state/tasks.js";
 
 function toMonthKey(date) {
@@ -78,8 +78,16 @@ export default function App() {
   };
 
   const handleUpdate = async (id, payload) => {
-    const updated = await updateTask(id, payload);
-    setTasks((prev) => prev.map((task) => (task.id === id ? updated : task)));
+    const result = await updateTask(id, payload);
+    const updated = result.task || result;
+    const newTask = result.newTask || null;
+    setTasks((prev) => {
+      const mapped = prev.map((task) => (task.id === id ? updated : task));
+      if (newTask && newTask.date.startsWith(monthKey)) {
+        return [...mapped, newTask];
+      }
+      return mapped;
+    });
   };
 
   const handleDelete = async (id) => {
@@ -90,6 +98,11 @@ export default function App() {
   const handleAddEvent = async (payload) => {
     const created = await createEvent(payload);
     setEvents((prev) => [...prev, created]);
+  };
+
+  const handleUpdateEvent = async (id, payload) => {
+    const updated = await updateEvent(id, payload);
+    setEvents((prev) => prev.map((e) => (e.id === id ? updated : e)));
   };
 
   const handleDeleteEvent = async (id) => {
@@ -130,6 +143,7 @@ export default function App() {
             date={selectedDate}
             events={dayEvents}
             onAdd={handleAddEvent}
+            onUpdate={handleUpdateEvent}
             onDelete={handleDeleteEvent}
           />
         </section>

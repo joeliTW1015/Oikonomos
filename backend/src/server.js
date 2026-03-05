@@ -3,6 +3,7 @@ const cors = require("cors");
 
 const tasksRouter = require("./routes/tasks");
 const tagsRouter = require("./routes/tags");
+const eventsRouter = require("./routes/events");
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/tasks", tasksRouter);
 app.use("/api/tags", tagsRouter);
+app.use("/api/events", eventsRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);

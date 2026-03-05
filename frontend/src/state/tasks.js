@@ -1,3 +1,13 @@
+export function groupEventsByDate(events) {
+  return events.reduce((acc, event) => {
+    if (!acc[event.date]) {
+      acc[event.date] = [];
+    }
+    acc[event.date].push(event);
+    return acc;
+  }, {});
+}
+
 export function groupTasksByDate(tasks) {
   return tasks.reduce((acc, task) => {
     if (!acc[task.date]) {

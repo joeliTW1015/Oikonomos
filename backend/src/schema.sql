@@ -21,6 +21,15 @@ CREATE TABLE IF NOT EXISTS task_tags (
   FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  date TEXT NOT NULL,
+  title TEXT NOT NULL,
+  time TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_tasks_date ON tasks(date);
 CREATE INDEX IF NOT EXISTS idx_task_tags_task_id ON task_tags(task_id);
 CREATE INDEX IF NOT EXISTS idx_task_tags_tag_id ON task_tags(tag_id);
+CREATE INDEX IF NOT EXISTS idx_events_date ON events(date);

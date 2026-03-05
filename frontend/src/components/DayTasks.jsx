@@ -13,9 +13,11 @@ export default function DayTasks({
   onDelete
 }) {
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [tagsInput, setTagsInput] = useState("");
   const [editId, setEditId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
   const [editTagsInput, setEditTagsInput] = useState("");
 
   const sortedTasks = useMemo(() => {
@@ -29,22 +31,26 @@ export default function DayTasks({
     }
     onAdd({
       title: title.trim(),
+      description: description.trim() || null,
       date,
       tags: parseTags(tagsInput)
     });
     setTitle("");
+    setDescription("");
     setTagsInput("");
   };
 
   const beginEdit = (task) => {
     setEditId(task.id);
     setEditTitle(task.title);
+    setEditDescription(task.description || "");
     setEditTagsInput(tagsToString(task.tags));
   };
 
   const handleEditSave = (task) => {
     onUpdate(task.id, {
       title: editTitle.trim(),
+      description: editDescription.trim() || null,
       date,
       completed: task.completed,
       tags: parseTags(editTagsInput)
@@ -72,6 +78,12 @@ export default function DayTasks({
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="Add a task"
+        />
+        <input
+          type="text"
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          placeholder="Description (optional)"
         />
         <input
           type="text"
@@ -103,6 +115,17 @@ export default function DayTasks({
                 </span>
               )}
             </label>
+            {editId === task.id ? (
+              <input
+                className="day__edit"
+                type="text"
+                value={editDescription}
+                onChange={(event) => setEditDescription(event.target.value)}
+                placeholder="Description (optional)"
+              />
+            ) : task.description ? (
+              <p className="day__description">{task.description}</p>
+            ) : null}
             {editId === task.id ? (
               <input
                 className="day__edit"

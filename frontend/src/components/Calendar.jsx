@@ -27,6 +27,7 @@ function buildCalendarDays(monthDate) {
 export default function Calendar({
   monthDate,
   tasksByDate,
+  eventsByDate,
   selectedDate,
   onSelectDate,
   onPrevMonth,
@@ -38,19 +39,15 @@ export default function Calendar({
   return (
     <section className="calendar">
       <header className="calendar__header">
-        <button type="button" onClick={onPrevMonth}>
-          
-        </button>
+        <button type="button" onClick={onPrevMonth}>&#8592;</button>
         <h2>
-          {monthDate.toLocaleString("default", { month: "long" })} {" "}
+          {monthDate.toLocaleString("default", { month: "long" })}{" "}
           {monthDate.getFullYear()}
         </h2>
-        <button type="button" onClick={onNextMonth}>
-          
-        </button>
+        <button type="button" onClick={onNextMonth}>&#8594;</button>
       </header>
       <div className="calendar__weekdays">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((label) => (
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label) => (
           <div key={label} className="calendar__weekday">
             {label}
           </div>
@@ -62,6 +59,8 @@ export default function Calendar({
           const isCurrentMonth = day.getMonth() === month;
           const isSelected = isoDate === selectedDate;
           const hasTasks = (tasksByDate[isoDate] || []).length > 0;
+          const dayEvents = (eventsByDate || {})[isoDate] || [];
+          const visibleEvents = dayEvents.slice(0, 2);
 
           return (
             <button
@@ -75,6 +74,16 @@ export default function Calendar({
               onClick={() => onSelectDate(isoDate)}
             >
               <span className="calendar__day-number">{day.getDate()}</span>
+              <span className="calendar__day-body">
+                {visibleEvents.map((event) => (
+                  <span key={event.id} className="calendar__event-chip">
+                    {event.time ? (
+                      <span className="calendar__event-time">{event.time} </span>
+                    ) : null}
+                    {event.title}
+                  </span>
+                ))}
+              </span>
               {hasTasks ? <span className="calendar__dot" /> : null}
             </button>
           );

@@ -79,6 +79,9 @@ body {
   text-align: left;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .calendar__day:hover {
@@ -196,6 +199,143 @@ body {
 
 .error {
   color: #c7362f;
+}
+
+.day__description {
+  margin: 0;
+  font-size: 13px;
+  color: #5a5a6e;
+  line-height: 1.4;
+}
+
+/* Calendar event chips */
+.calendar__day-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  flex: 1;
+}
+
+.calendar__event-chip {
+  display: block;
+  font-size: 10px;
+  line-height: 1.3;
+  background: #e8f0fe;
+  color: #2a52c9;
+  border-radius: 4px;
+  padding: 1px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.calendar__event-time {
+  font-weight: 600;
+}
+
+/* Time picker */
+.time-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.time-picker__enable {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #4b4b4b;
+  cursor: pointer;
+}
+
+.time-picker__controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #f6f8ff;
+  border-radius: 10px;
+  border: 1px solid #e0e4ee;
+}
+
+.time-picker__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.time-picker__row select {
+  border: 1px solid #d5d9e6;
+  border-radius: 8px;
+  padding: 5px 8px;
+  font-size: 13px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.time-picker__sep {
+  font-weight: 600;
+  color: #4b4b4b;
+}
+
+.time-picker__until {
+  font-size: 12px;
+  color: #6d6d6d;
+  font-weight: 500;
+}
+
+.time-picker__duration-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #4b4b4b;
+  cursor: pointer;
+}
+
+/* Events section */
+.events-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #eef0f5;
+}
+
+.event-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: row;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.event-item__body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.event-item__time {
+  font-size: 12px;
+  font-weight: 600;
+  color: #3f5efb;
+  white-space: nowrap;
+  background: #eef1ff;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.event-item__title {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 900px) {

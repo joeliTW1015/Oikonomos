@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Calendar from "./components/Calendar.jsx";
 import DayTasks from "./components/DayTasks.jsx";
-import { createTask, deleteTask, fetchTasks, updateTask } from "./api/client.js";
-import { groupTasksByDate } from "./state/tasks.js";
+import DayEvents from "./components/DayEvents.jsx";
+import { createTask, deleteTask, fetchTasks, updateTask, fetchEvents, createEvent, deleteEvent } from "./api/client.js";
+import { groupTasksByDate, groupEventsByDate } from "./state/tasks.js";
 
 function toMonthKey(date) {
   const year = date.getFullYear();
@@ -21,21 +22,24 @@ export default function App() {
   const [monthDate, setMonthDate] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(() => toDateKey(new Date()));
   const [tasks, setTasks] = useState([]);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const monthKey = useMemo(() => toMonthKey(monthDate), [monthDate]);
   const tasksByDate = useMemo(() => groupTasksByDate(tasks), [tasks]);
+  const eventsByDate = useMemo(() => groupEventsByDate(events), [events]);
 
   useEffect(() => {
     let isActive = true;
     setLoading(true);
-    fetchTasks(monthKey)
-      .then((data) => {
+    Promise.all([fetchTasks(monthKey), fetchEvents(monthKey)])
+      .then(([taskData, eventData]) => {
         if (!isActive) {
           return;
         }
-        setTasks(data);
+        setTasks(taskData);
+        setEvents(eventData);
         setError(null);
       })
       .catch((err) => {
@@ -83,7 +87,18 @@ export default function App() {
     setTasks((prev) => prev.filter((task) => task.id !== id));
   };
 
+  const handleAddEvent = async (payload) => {
+    const created = await createEvent(payload);
+    setEvents((prev) => [...prev, created]);
+  };
+
+  const handleDeleteEvent = async (id) => {
+    await deleteEvent(id);
+    setEvents((prev) => prev.filter((e) => e.id !== id));
+  };
+
   const dayTasks = tasksByDate[selectedDate] || [];
+  const dayEvents = eventsByDate[selectedDate] || [];
 
   return (
     <div className="app">
@@ -95,6 +110,7 @@ export default function App() {
         <Calendar
           monthDate={monthDate}
           tasksByDate={tasksByDate}
+          eventsByDate={eventsByDate}
           selectedDate={selectedDate}
           onSelectDate={setSelectedDate}
           onPrevMonth={handlePrevMonth}
@@ -109,6 +125,12 @@ export default function App() {
             onAdd={handleAdd}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
+          />
+          <DayEvents
+            date={selectedDate}
+            events={dayEvents}
+            onAdd={handleAddEvent}
+            onDelete={handleDeleteEvent}
           />
         </section>
       </main>

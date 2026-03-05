@@ -47,3 +47,20 @@ export async function deleteTask(id) {
 export async function fetchTags() {
   return request("/tags");
 }
+
+export async function fetchEvents(month) {
+  return request(`/events?month=${encodeURIComponent(month)}`);
+}
+
+export async function createEvent(payload) {
+  return request("/events", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deleteEvent(id) {
+  return request(`/events/${id}`, {
+    method: "DELETE"
+  });
+}

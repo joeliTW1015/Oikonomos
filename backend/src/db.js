@@ -12,6 +12,9 @@ const db = new sqlite3.Database(dbFile);
 db.exec("PRAGMA foreign_keys = ON;");
 db.exec(schema);
 
+// Migration: add description column to tasks if it doesn't exist yet
+db.run("ALTER TABLE tasks ADD COLUMN description TEXT", () => {});
+
 function run(sql, params = []) {
   return new Promise((resolve, reject) => {
     db.run(sql, params, function (err) {

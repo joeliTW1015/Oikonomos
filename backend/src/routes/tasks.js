@@ -32,6 +32,7 @@ function rowsToTasks(rows) {
   return rows.map((row) => ({
     id: row.id,
     title: row.title,
+    description: row.description || null,
     date: row.date,
     completed: Boolean(row.completed),
     tags: row.tags ? row.tags.split("|") : []
@@ -51,7 +52,7 @@ router.get("/", async (req, res, next) => {
 
     if (date) {
       rows = await all(
-        "SELECT t.id, t.title, t.date, t.completed, GROUP_CONCAT(tags.name, '|') AS tags " +
+        "SELECT t.id, t.title, t.description, t.date, t.completed, GROUP_CONCAT(tags.name, '|') AS tags " +
           "FROM tasks t " +
           "LEFT JOIN task_tags tt ON tt.task_id = t.id " +
           "LEFT JOIN tags ON tags.id = tt.tag_id " +
@@ -76,7 +77,7 @@ router.get("/", async (req, res, next) => {
       const endStr = end.toISOString().slice(0, 10);
 
       rows = await all(
-        "SELECT t.id, t.title, t.date, t.completed, GROUP_CONCAT(tags.name, '|') AS tags " +
+        "SELECT t.id, t.title, t.description, t.date, t.completed, GROUP_CONCAT(tags.name, '|') AS tags " +
           "FROM tasks t " +
           "LEFT JOIN task_tags tt ON tt.task_id = t.id " +
           "LEFT JOIN tags ON tags.id = tt.tag_id " +
@@ -95,7 +96,7 @@ router.get("/", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const { title, date, tags } = req.body;
+    const { title, date, description, tags } = req.body;
 
     if (!title || !date) {
       res.status(400).json({ error: "title and date are required" });
@@ -103,8 +104,8 @@ router.post("/", async (req, res, next) => {
     }
 
     const result = await run(
-      "INSERT INTO tasks (title, date, completed) VALUES (?, ?, 0)",
-      [String(title).trim(), String(date)]
+      "INSERT INTO tasks (title, description, date, completed) VALUES (?, ?, ?, 0)",
+      [String(title).trim(), description ? String(description).trim() : null, String(date)]
     );
 
     const tagIds = await ensureTags(tags);
@@ -116,7 +117,7 @@ router.post("/", async (req, res, next) => {
     }
 
     const row = await get(
-      "SELECT t.id, t.title, t.date, t.completed, GROUP_CONCAT(tags.name, '|') AS tags " +
+      "SELECT t.id, t.title, t.description, t.date, t.completed, GROUP_CONCAT(tags.name, '|') AS tags " +
         "FROM tasks t " +
         "LEFT JOIN task_tags tt ON tt.task_id = t.id " +
         "LEFT JOIN tags ON tags.id = tt.tag_id " +
@@ -134,7 +135,7 @@ router.post("/", async (req, res, next) => {
 router.put("/:id", async (req, res, next) => {
   try {
     const taskId = Number(req.params.id);
-    const { title, date, completed, tags } = req.body;
+    const { title, date, description, completed, tags } = req.body;
 
     if (!Number.isInteger(taskId)) {
       res.status(400).json({ error: "invalid task id" });
@@ -148,9 +149,10 @@ router.put("/:id", async (req, res, next) => {
     }
 
     await run(
-      "UPDATE tasks SET title = ?, date = ?, completed = ? WHERE id = ?",
+      "UPDATE tasks SET title = ?, description = ?, date = ?, completed = ? WHERE id = ?",
       [
         String(title).trim(),
+        description ? String(description).trim() : null,
         String(date),
         completed ? 1 : 0,
         taskId
@@ -169,7 +171,7 @@ router.put("/:id", async (req, res, next) => {
     }
 
     const row = await get(
-      "SELECT t.id, t.title, t.date, t.completed, GROUP_CONCAT(tags.name, '|') AS tags " +
+      "SELECT t.id, t.title, t.description, t.date, t.completed, GROUP_CONCAT(tags.name, '|') AS tags " +
         "FROM tasks t " +
         "LEFT JOIN task_tags tt ON tt.task_id = t.id " +
         "LEFT JOIN tags ON tags.id = tt.tag_id " +

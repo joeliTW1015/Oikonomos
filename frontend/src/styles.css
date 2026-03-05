@@ -1,0 +1,205 @@
+* {
+  box-sizing: border-box;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top left, #f2f8ff, #f9f9f4 45%, #fef6f0);
+  color: #1b1b1b;
+}
+
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+
+.app__header h1 {
+  margin: 0 0 8px;
+  font-size: 32px;
+}
+
+.app__header p {
+  margin: 0 0 24px;
+  color: #4b4b4b;
+}
+
+.app__main {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.1fr) minmax(300px, 0.9fr);
+  gap: 24px;
+}
+
+.calendar {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 12px 30px rgba(20, 30, 50, 0.08);
+}
+
+.calendar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.calendar__header button {
+  border: none;
+  background: #ecf1ff;
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.calendar__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #6d6d6d;
+  margin-bottom: 8px;
+}
+
+.calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.calendar__day {
+  position: relative;
+  border: 1px solid #f0f1f4;
+  border-radius: 10px;
+  min-height: 72px;
+  background: #ffffff;
+  padding: 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.calendar__day:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(20, 30, 50, 0.08);
+}
+
+.calendar__day--muted {
+  color: #b1b1b1;
+  background: #fafafa;
+}
+
+.calendar__day--selected {
+  border-color: #3f5efb;
+  box-shadow: 0 0 0 2px rgba(63, 94, 251, 0.18);
+}
+
+.calendar__day-number {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.calendar__dot {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ff8a5c;
+}
+
+.app__panel {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 12px 30px rgba(20, 30, 50, 0.08);
+}
+
+.day__form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.day__form input {
+  border-radius: 10px;
+  border: 1px solid #e0e4ee;
+  padding: 10px 12px;
+}
+
+.day__form button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #3f5efb;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.day__item {
+  border: 1px solid #eef0f5;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.day__item label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.day__edit {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #d5d9e6;
+  padding: 6px 8px;
+}
+
+.day__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.day__tag {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f1f4ff;
+  color: #3f5efb;
+  font-size: 12px;
+}
+
+.day__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.day__actions button {
+  border: none;
+  background: #f0f2f7;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.is-done {
+  text-decoration: line-through;
+  color: #8a8a8a;
+}
+
+.error {
+  color: #c7362f;
+}
+
+@media (max-width: 900px) {
+  .app__main {
+    grid-template-columns: 1fr;
+  }
+}

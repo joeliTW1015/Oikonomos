@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const sqlite3 = require("sqlite3").verbose();
 
-const dbFile = path.join(__dirname, "..", "data.sqlite");
+const dbFile = process.env.DB_PATH || path.join(__dirname, "..", "data.sqlite");
 const schemaPath = path.join(__dirname, "schema.sql");
 const schema = fs.readFileSync(schemaPath, "utf8");
 

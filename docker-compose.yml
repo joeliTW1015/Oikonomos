@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./data:/data
+    environment:
+      - DB_PATH=/data/data.sqlite
+    restart: unless-stopped

@@ -1,5 +1,7 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
+const fs = require("fs");
 
 const tasksRouter = require("./routes/tasks");
 const tagsRouter = require("./routes/tags");
@@ -30,6 +32,12 @@ app.use("/api/tags", tagsRouter);
 app.use("/api/events", eventsRouter);
 app.use("/api/shopping", shoppingRouter);
 app.use("/api/goals", goalsRouter);
+
+const distPath = path.join(__dirname, "..", "frontend-dist");
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.get("*", (req, res) => res.sendFile(path.join(distPath, "index.html")));
+}
 
 app.use((err, req, res, next) => {
   console.error(err);

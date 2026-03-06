@@ -70,6 +70,38 @@ export async function updateEvent(id, payload) {
   });
 }
 
+export async function fetchGoals() {
+  return request("/goals");
+}
+
+export async function createGoal(payload) {
+  return request("/goals", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export async function updateGoal(id, payload) {
+  return request(`/goals/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+}
+
+export async function deleteGoal(id) {
+  return request(`/goals/${id}`, { method: "DELETE" });
+}
+
+export async function fetchShoppingItems() {
+  return request("/shopping");
+}
+
+export async function createShoppingItem(payload) {
+  return request("/shopping", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export async function updateShoppingItem(id, payload) {
+  return request(`/shopping/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+}
+
+export async function deleteShoppingItem(id) {
+  return request(`/shopping/${id}`, { method: "DELETE" });
+}
+
 export async function deleteEvent(id) {
   return request(`/events/${id}`, {
     method: "DELETE"

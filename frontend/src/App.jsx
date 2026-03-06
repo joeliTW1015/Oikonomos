@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import Calendar from "./components/Calendar.jsx";
 import DayTasks from "./components/DayTasks.jsx";
 import DayEvents from "./components/DayEvents.jsx";
+import ShoppingList from "./components/ShoppingList.jsx";
+import GoalList from "./components/GoalList.jsx";
 import { createTask, deleteTask, fetchTasks, updateTask, fetchEvents, createEvent, updateEvent, deleteEvent } from "./api/client.js";
 import { groupTasksByDate, groupEventsByDate } from "./state/tasks.js";
 
@@ -35,29 +37,14 @@ export default function App() {
     setLoading(true);
     Promise.all([fetchTasks(monthKey), fetchEvents(monthKey)])
       .then(([taskData, eventData]) => {
-        if (!isActive) {
-          return;
-        }
+        if (!isActive) return;
         setTasks(taskData);
         setEvents(eventData);
         setError(null);
       })
-      .catch((err) => {
-        if (!isActive) {
-          return;
-        }
-        setError(err.message || "Failed to load");
-      })
-      .finally(() => {
-        if (!isActive) {
-          return;
-        }
-        setLoading(false);
-      });
-
-    return () => {
-      isActive = false;
-    };
+      .catch((err) => { if (!isActive) return; setError(err.message || "Failed to load"); })
+      .finally(() => { if (!isActive) return; setLoading(false); });
+    return () => { isActive = false; };
   }, [monthKey]);
 
   const handlePrevMonth = () => {
@@ -83,9 +70,7 @@ export default function App() {
     const newTask = result.newTask || null;
     setTasks((prev) => {
       const mapped = prev.map((task) => (task.id === id ? updated : task));
-      if (newTask && newTask.date.startsWith(monthKey)) {
-        return [...mapped, newTask];
-      }
+      if (newTask && newTask.date.startsWith(monthKey)) return [...mapped, newTask];
       return mapped;
     });
   };
@@ -116,21 +101,29 @@ export default function App() {
   return (
     <div className="app">
       <header className="app__header">
-        <h1>Calendar + Todo</h1>
-        <p>Plan your tasks and tag them by day.</p>
+        <div className="app__header-brand">
+          <h1>Oikonomos</h1>
+          <span className="app__header-sub">Your personal planner</span>
+        </div>
       </header>
+
+      <GoalList />
+
       <main className="app__main">
-        <Calendar
-          monthDate={monthDate}
-          tasksByDate={tasksByDate}
-          eventsByDate={eventsByDate}
-          selectedDate={selectedDate}
-          onSelectDate={setSelectedDate}
-          onPrevMonth={handlePrevMonth}
-          onNextMonth={handleNextMonth}
-        />
+        <div className="app__left">
+          <Calendar
+            monthDate={monthDate}
+            tasksByDate={tasksByDate}
+            eventsByDate={eventsByDate}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            onPrevMonth={handlePrevMonth}
+            onNextMonth={handleNextMonth}
+          />
+          <ShoppingList />
+        </div>
         <section className="app__panel">
-          {loading ? <p>Loading...</p> : null}
+          {loading ? <p className="app__loading">Loading…</p> : null}
           {error ? <p className="error">{error}</p> : null}
           <DayTasks
             date={selectedDate}

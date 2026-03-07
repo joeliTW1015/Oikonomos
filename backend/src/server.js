@@ -18,15 +18,6 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-app.get("/", (req, res) => {
-  res.status(200).send(
-    "<html><body style=\"font-family: sans-serif;\">" +
-      "<h1>Oikonomos API</h1>" +
-      "<p>Frontend dev server: <a href=\"http://localhost:5173\">http://localhost:5173</a></p>" +
-      "</body></html>"
-  );
-});
-
 app.use("/api/tasks", tasksRouter);
 app.use("/api/tags", tagsRouter);
 app.use("/api/events", eventsRouter);
@@ -37,6 +28,15 @@ const distPath = path.join(__dirname, "..", "frontend-dist");
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
   app.get("*", (req, res) => res.sendFile(path.join(distPath, "index.html")));
+} else {
+  app.get("/", (req, res) => {
+    res.status(200).send(
+      "<html><body style=\"font-family: sans-serif;\">" +
+        "<h1>Oikonomos API</h1>" +
+        "<p>Frontend dev server: <a href=\"http://localhost:5173\">http://localhost:5173</a></p>" +
+        "</body></html>"
+    );
+  });
 }
 
 app.use((err, req, res, next) => {

@@ -5,6 +5,7 @@ import DayEvents from "./components/DayEvents.jsx";
 import ShoppingList from "./components/ShoppingList.jsx";
 import GoalList from "./components/GoalList.jsx";
 import LongTermTodos from "./components/LongTermTodos.jsx";
+import ChatWidget from "./components/ChatWidget.jsx";
 import { createTask, deleteTask, fetchTasks, updateTask, fetchEvents, createEvent, updateEvent, deleteEvent } from "./api/client.js";
 import { groupTasksByDate, groupEventsByDate } from "./state/tasks.js";
 
@@ -121,8 +122,6 @@ export default function App() {
             onPrevMonth={handlePrevMonth}
             onNextMonth={handleNextMonth}
           />
-          <LongTermTodos />
-          <ShoppingList />
         </div>
         <section className="app__panel">
           {loading ? <p className="app__loading">Loading…</p> : null}
@@ -142,7 +141,12 @@ export default function App() {
             onDelete={handleDeleteEvent}
           />
         </section>
+        <div className="app__secondary">
+          <LongTermTodos />
+          <ShoppingList />
+        </div>
       </main>
+      <ChatWidget selectedDate={selectedDate} />
     </div>
   );
 }

@@ -9,6 +9,7 @@ const eventsRouter = require("./routes/events");
 const shoppingRouter = require("./routes/shopping");
 const goalsRouter = require("./routes/goals");
 const longTermTodosRouter = require("./routes/longtermtodos");
+const chatRouter = require("./routes/chat");
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use("/api/events", eventsRouter);
 app.use("/api/shopping", shoppingRouter);
 app.use("/api/goals", goalsRouter);
 app.use("/api/long-term-todos", longTermTodosRouter);
+app.use("/api/chat", chatRouter);
 
 const distPath = path.join(__dirname, "..", "frontend-dist");
 if (fs.existsSync(distPath)) {

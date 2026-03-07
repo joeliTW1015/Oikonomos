@@ -123,3 +123,10 @@ export async function updateLongTermTodo(id, payload) {
 export async function deleteLongTermTodo(id) {
   return request(`/long-term-todos/${id}`, { method: "DELETE" });
 }
+
+export async function sendChatMessage(messages, date) {
+  return request("/chat", {
+    method: "POST",
+    body: JSON.stringify({ messages, date })
+  });
+}

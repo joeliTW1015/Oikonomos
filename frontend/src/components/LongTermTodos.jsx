@@ -43,11 +43,11 @@ export default function LongTermTodos() {
       <div className="lttodos__header">
         <span className="lttodos__title">
           <ListTodo size={16} />
-          長期待辦事項
+          Long-term Todos
         </span>
-        <button className="lttodos__add-btn" onClick={() => setAdding(true)} title="新增待辦">
+        <button className="lttodos__add-btn" onClick={() => setAdding(true)} title="Add todo">
           <Plus size={15} />
-          新增
+          Add
         </button>
       </div>
 
@@ -64,24 +64,24 @@ export default function LongTermTodos() {
                 className="lttodos__draft-input"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder="輸入待辦事項…"
+                placeholder="Enter todo…"
                 onKeyDown={(e) => e.key === "Escape" && setAdding(false)}
               />
               <div className="lttodos__draft-actions">
-                <button type="submit" className="lttodos__confirm-btn">新增</button>
-                <button type="button" className="lttodos__cancel-btn" onClick={() => setAdding(false)}>取消</button>
+                <button type="submit" className="lttodos__confirm-btn">Add</button>
+                <button type="button" className="lttodos__cancel-btn" onClick={() => setAdding(false)}>Cancel</button>
               </div>
             </form>
           </li>
         )}
 
         {todos.length === 0 && !adding && (
-          <li className="lttodos__empty">尚無長期待辦事項。點擊「新增」開始記錄。</li>
+          <li className="lttodos__empty">No long-term todos yet. Click "Add" to get started.</li>
         )}
 
         {done.length > 0 && (
           <>
-            <li className="lttodos__divider">已完成</li>
+            <li className="lttodos__divider">Completed</li>
             {done.map((todo) => (
               <TodoItem key={todo.id} todo={todo} onToggle={handleToggle} onDelete={handleDelete} />
             ))}

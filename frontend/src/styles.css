@@ -91,6 +91,9 @@ input, select, textarea, button {
 .app__main {
   display: grid;
   grid-template-columns: minmax(280px, 1.15fr) minmax(300px, 0.85fr);
+  grid-template-areas:
+    "left panel"
+    "secondary panel";
   gap: 16px;
   align-items: start;
 }
@@ -888,6 +891,18 @@ input, select, textarea, button {
 
 /* ── Left column wrapper ─────────────────────────────────────── */
 .app__left {
+  grid-area: left;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.app__panel {
+  grid-area: panel;
+}
+
+.app__secondary {
+  grid-area: secondary;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -1278,6 +1293,10 @@ button, a {
 @media (max-width: 700px) {
   .app__main {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "left"
+      "panel"
+      "secondary";
   }
 }
 
@@ -1531,16 +1550,42 @@ button, a {
 .chat__send-btn:hover:not(:disabled) { background: #4a6de0; }
 .chat__send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-@media (max-width: 480px) {
+/* Chat — iPad Mini / tablet (701px – 1024px) */
+@media (min-width: 701px) and (max-width: 1024px) {
   .chat__panel {
-    right: 0;
-    bottom: 64px;
-    width: 100vw;
-    height: 70vh;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    width: 400px;
+    height: 520px;
+    bottom: 88px;
+    right: 20px;
   }
   .chat__toggle {
-    bottom: 16px;
+    bottom: 28px;
+    right: 20px;
+    width: 52px;
+    height: 52px;
+  }
+}
+
+/* Chat — phone (≤ 700px) */
+@media (max-width: 700px) {
+  .chat__panel {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 72vh;
+    max-height: 600px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    /* Respect home-bar safe area */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .chat__toggle {
+    bottom: max(20px, calc(12px + env(safe-area-inset-bottom)));
     right: 16px;
+    width: 52px;
+    height: 52px;
+  }
+  .chat__input {
+    font-size: 16px; /* prevent iOS auto-zoom */
   }
 }

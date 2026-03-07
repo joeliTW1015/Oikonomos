@@ -1073,8 +1073,98 @@ input, select, textarea, button {
 }
 
 /* ── Responsive ──────────────────────────────────────────────── */
-@media (max-width: 900px) {
+
+/* Remove iOS tap flash on interactive elements */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Single column below iPad Mini portrait width */
+@media (max-width: 700px) {
   .app__main {
     grid-template-columns: 1fr;
   }
+}
+
+/* iPad Mini 6 portrait (701px – 900px): slight padding reduction */
+@media (min-width: 701px) and (max-width: 900px) {
+  .app {
+    padding: 20px 18px 48px;
+  }
+}
+
+/* ── iPhone 11 Pro and small phones (≤ 480px) ── */
+@media (max-width: 480px) {
+  /* Shell */
+  .app {
+    padding: 12px 14px 72px;
+    /* Respect notch / home-bar safe areas */
+    padding-bottom: max(72px, calc(56px + env(safe-area-inset-bottom)));
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
+  }
+
+  .app__header { margin-bottom: 12px; }
+  .app__header-brand h1 { font-size: 18px; }
+  .app__header-sub { display: none; }
+  .app__main { gap: 10px; }
+
+  /* Calendar */
+  .calendar { padding: 12px 10px; }
+  .calendar__header { margin-bottom: 10px; }
+  .calendar__header h2 { font-size: 14px; }
+  .calendar__header button { padding: 6px 10px; font-size: 14px; }
+  .calendar__grid { gap: 3px; }
+  .calendar__day { min-height: 52px; padding: 5px 4px; }
+  .calendar__day-number { font-size: 11px; }
+  .calendar__event-chip { font-size: 9px; padding: 1px 3px; }
+
+  /* Panel */
+  .app__panel { padding: 14px 12px; }
+
+  /* Prevent iOS auto-zoom (inputs must be ≥ 16px to avoid zoom) */
+  .day__form input,
+  .day__form textarea,
+  .day__status-note,
+  .day__edit,
+  .goals__draft-input,
+  .shopping__form input {
+    font-size: 16px;
+  }
+
+  /* Status action buttons — iOS minimum touch target is 44px */
+  .btn-status {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* General action buttons — bigger touch area */
+  .day__actions button {
+    padding: 9px 14px;
+    font-size: 13px;
+  }
+
+  .btn-icon {
+    padding: 8px 10px;
+  }
+
+  /* Status date row — wrap on narrow screens */
+  .day__status-date {
+    flex-wrap: wrap;
+  }
+
+  /* Goals */
+  .goals { padding: 12px 12px; }
+  .goals__board { flex-direction: column; }
+  .goals__card { max-width: 100%; min-width: 0; width: 100%; }
+  .goals__card--draft { min-width: 0; }
+  .goals__check { width: 22px; height: 22px; } /* easier to tap */
+
+  /* Shopping */
+  .shopping { padding: 14px 12px; }
+  .shopping__form { flex-direction: column; align-items: stretch; }
+  .shopping__form input { width: 100%; }
+  .shopping__type-toggle { align-self: flex-start; }
+  .shopping__check { width: 22px; height: 22px; border-radius: 6px; } /* easier to tap */
+  .shopping__item { padding: 9px 10px; }
 }

@@ -107,3 +107,19 @@ export async function deleteEvent(id) {
     method: "DELETE"
   });
 }
+
+export async function fetchLongTermTodos() {
+  return request("/long-term-todos");
+}
+
+export async function createLongTermTodo(payload) {
+  return request("/long-term-todos", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export async function updateLongTermTodo(id, payload) {
+  return request(`/long-term-todos/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+}
+
+export async function deleteLongTermTodo(id) {
+  return request(`/long-term-todos/${id}`, { method: "DELETE" });
+}

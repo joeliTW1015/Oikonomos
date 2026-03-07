@@ -1072,6 +1072,201 @@ input, select, textarea, button {
   background: var(--failure-bg);
 }
 
+/* ── Long-term todos ─────────────────────────────────────────── */
+.lttodos {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+}
+
+.lttodos__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.lttodos__title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.lttodos__add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--border-2);
+  background: var(--surface-3);
+  color: var(--text-2);
+  border-radius: var(--radius-sm);
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.lttodos__add-btn:hover {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.lttodos__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lttodos__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: opacity 0.2s;
+}
+
+.lttodos__item--done {
+  opacity: 0.45;
+}
+
+.lttodos__item--draft {
+  background: var(--surface-3);
+  border-color: var(--border-2);
+}
+
+.lttodos__check {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border-2);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.lttodos__check:hover { border-color: var(--accent); }
+
+.lttodos__check--done {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.lttodos__item-title {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lttodos__item--done .lttodos__item-title {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.lttodos__delete {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 2px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.lttodos__delete:hover { color: var(--failure-text); }
+
+.lttodos__divider {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  padding: 6px 2px 2px;
+  list-style: none;
+}
+
+.lttodos__empty {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  list-style: none;
+  padding: 4px 2px;
+}
+
+.lttodos__draft-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.lttodos__draft-input {
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  padding: 7px 9px;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+}
+
+.lttodos__draft-input::placeholder { color: var(--text-muted); }
+.lttodos__draft-input:focus { border-color: var(--accent); }
+
+.lttodos__draft-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.lttodos__confirm-btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lttodos__cancel-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
 /* ── Responsive ──────────────────────────────────────────────── */
 
 /* Remove iOS tap flash on interactive elements */

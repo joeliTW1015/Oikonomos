@@ -8,6 +8,7 @@ const tagsRouter = require("./routes/tags");
 const eventsRouter = require("./routes/events");
 const shoppingRouter = require("./routes/shopping");
 const goalsRouter = require("./routes/goals");
+const longTermTodosRouter = require("./routes/longtermtodos");
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use("/api/tags", tagsRouter);
 app.use("/api/events", eventsRouter);
 app.use("/api/shopping", shoppingRouter);
 app.use("/api/goals", goalsRouter);
+app.use("/api/long-term-todos", longTermTodosRouter);
 
 const distPath = path.join(__dirname, "..", "frontend-dist");
 if (fs.existsSync(distPath)) {

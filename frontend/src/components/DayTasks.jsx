@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { CheckCircle2, XCircle, CalendarClock, History, ChevronUp, ChevronDown } from "lucide-react";
+import { CheckCircle2, XCircle, CalendarClock, History, ChevronUp, ChevronDown, RotateCcw } from "lucide-react";
 import { parseTags } from "../state/tasks.js";
 import { fetchTaskHistory } from "../api/client.js";
 
@@ -41,17 +41,32 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  const sortedTasks = useMemo(
-    () => [...tasks].sort((a, b) => (a.position ?? a.id) - (b.position ?? b.id)),
+  const byPosition = (a, b) => (a.position ?? a.id) - (b.position ?? b.id);
+
+  const pendingTasks = useMemo(
+    () => tasks.filter((t) => t.status === "pending").sort(byPosition),
     [tasks]
   );
+  const resolvedTasks = useMemo(
+    () => tasks.filter((t) => t.status !== "pending").sort(byPosition),
+    [tasks]
+  );
+  const sortedTasks = useMemo(
+    () => [...pendingTasks, ...resolvedTasks],
+    [pendingTasks, resolvedTasks]
+  );
 
-  const move = (index, direction) => {
-    const next = [...sortedTasks];
-    const swapIndex = index + direction;
+  // Move within pending group only; pass pending IDs to onReorder
+  const move = (pendingIndex, direction) => {
+    const next = [...pendingTasks];
+    const swapIndex = pendingIndex + direction;
     if (swapIndex < 0 || swapIndex >= next.length) return;
-    [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
+    [next[pendingIndex], next[swapIndex]] = [next[swapIndex], next[pendingIndex]];
     onReorder(next.map((t) => t.id));
+  };
+
+  const handleRestore = (task) => {
+    onUpdate(task.id, { status: "pending", note: null });
   };
 
   const tomorrow = useMemo(() => {
@@ -259,7 +274,7 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
 
             {/* Actions */}
             <div className="day__actions">
-              {sortedTasks.length > 1 && editId !== task.id && statusAction?.id !== task.id ? (
+              {task.status === "pending" && pendingTasks.length > 1 && editId !== task.id && statusAction?.id !== task.id ? (
                 <>
                   <button
                     type="button"
@@ -274,12 +289,22 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
                     type="button"
                     className="btn-icon"
                     title="Move down"
-                    disabled={index === sortedTasks.length - 1}
+                    disabled={index === pendingTasks.length - 1}
                     onClick={() => move(index, 1)}
                   >
                     <ChevronDown size={15} />
                   </button>
                 </>
+              ) : null}
+              {task.status !== "pending" && editId !== task.id ? (
+                <button
+                  type="button"
+                  className="btn-icon btn-restore"
+                  title="Restore to pending"
+                  onClick={() => handleRestore(task)}
+                >
+                  <RotateCcw size={14} />
+                </button>
               ) : null}
               {task.status === "pending" && editId !== task.id && statusAction?.id !== task.id ? (
                 <>

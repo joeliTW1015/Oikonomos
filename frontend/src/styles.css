@@ -439,6 +439,7 @@ input, select, textarea, button {
 .btn-icon:hover:not(:disabled) { background: var(--border-2); color: var(--text-2); }
 .btn-icon:disabled { opacity: 0.25; cursor: default; }
 .btn-history-active { background: var(--accent-dim) !important; color: var(--accent) !important; }
+.btn-restore:hover:not(:disabled) { background: var(--postpone-bg) !important; color: var(--postpone-text) !important; }
 
 /* ── Status badges ───────────────────────────────────────────── */
 .status-badge {

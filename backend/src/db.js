@@ -19,6 +19,7 @@ db.run("ALTER TABLE tasks ADD COLUMN note TEXT", () => {});
 db.run("ALTER TABLE tasks ADD COLUMN postpone_date TEXT", () => {});
 db.run("ALTER TABLE tasks ADD COLUMN origin_task_id INTEGER", () => {});
 db.run("ALTER TABLE tasks ADD COLUMN postpone_count INTEGER NOT NULL DEFAULT 0", () => {});
+db.run("ALTER TABLE tasks ADD COLUMN position INTEGER", () => {});
 db.run("ALTER TABLE events ADD COLUMN description TEXT", () => {});
 // Migrate old completed=1 tasks to status='success'
 db.run("UPDATE tasks SET status='success' WHERE completed=1 AND (status IS NULL OR status='pending')", () => {});

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { CheckCircle2, XCircle, CalendarClock, History } from "lucide-react";
+import { CheckCircle2, XCircle, CalendarClock, History, ChevronUp, ChevronDown, RotateCcw } from "lucide-react";
 import { parseTags } from "../state/tasks.js";
 import { fetchTaskHistory } from "../api/client.js";
 
@@ -24,7 +24,7 @@ function StatusBadge({ status }) {
   );
 }
 
-export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete }) {
+export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReorder }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [tagsInput, setTagsInput] = useState("");
@@ -41,7 +41,33 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete }) {
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  const sortedTasks = useMemo(() => [...tasks].sort((a, b) => a.id - b.id), [tasks]);
+  const byPosition = (a, b) => (a.position ?? a.id) - (b.position ?? b.id);
+
+  const pendingTasks = useMemo(
+    () => tasks.filter((t) => t.status === "pending").sort(byPosition),
+    [tasks]
+  );
+  const resolvedTasks = useMemo(
+    () => tasks.filter((t) => t.status !== "pending").sort(byPosition),
+    [tasks]
+  );
+  const sortedTasks = useMemo(
+    () => [...pendingTasks, ...resolvedTasks],
+    [pendingTasks, resolvedTasks]
+  );
+
+  // Move within pending group only; pass pending IDs to onReorder
+  const move = (pendingIndex, direction) => {
+    const next = [...pendingTasks];
+    const swapIndex = pendingIndex + direction;
+    if (swapIndex < 0 || swapIndex >= next.length) return;
+    [next[pendingIndex], next[swapIndex]] = [next[swapIndex], next[pendingIndex]];
+    onReorder(next.map((t) => t.id));
+  };
+
+  const handleRestore = (task) => {
+    onUpdate(task.id, { status: "pending", note: null });
+  };
 
   const tomorrow = useMemo(() => {
     const d = new Date();
@@ -127,7 +153,7 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete }) {
       </form>
 
       <div className="day__list">
-        {sortedTasks.map((task) => (
+        {sortedTasks.map((task, index) => (
           <div
             key={task.id}
             className={"day__item" + (task.status !== "pending" ? " day__item--resolved" : "")}
@@ -248,6 +274,38 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete }) {
 
             {/* Actions */}
             <div className="day__actions">
+              {task.status === "pending" && pendingTasks.length > 1 && editId !== task.id && statusAction?.id !== task.id ? (
+                <>
+                  <button
+                    type="button"
+                    className="btn-icon"
+                    title="Move up"
+                    disabled={index === 0}
+                    onClick={() => move(index, -1)}
+                  >
+                    <ChevronUp size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-icon"
+                    title="Move down"
+                    disabled={index === pendingTasks.length - 1}
+                    onClick={() => move(index, 1)}
+                  >
+                    <ChevronDown size={15} />
+                  </button>
+                </>
+              ) : null}
+              {task.status !== "pending" && editId !== task.id ? (
+                <button
+                  type="button"
+                  className="btn-icon btn-restore"
+                  title="Restore to pending"
+                  onClick={() => handleRestore(task)}
+                >
+                  <RotateCcw size={14} />
+                </button>
+              ) : null}
               {task.status === "pending" && editId !== task.id && statusAction?.id !== task.id ? (
                 <>
                   <button type="button" className="btn-status btn-status--success" title="Mark as Success" onClick={() => openStatusAction(task, "success")}>

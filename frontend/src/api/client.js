@@ -124,6 +124,13 @@ export async function deleteLongTermTodo(id) {
   return request(`/long-term-todos/${id}`, { method: "DELETE" });
 }
 
+export async function reorderTasks(ids) {
+  return request("/tasks/reorder", {
+    method: "PATCH",
+    body: JSON.stringify({ ids })
+  });
+}
+
 export async function sendChatMessage(messages, date) {
   return request("/chat", {
     method: "POST",

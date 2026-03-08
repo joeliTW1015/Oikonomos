@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { CheckCircle2, XCircle, CalendarClock, History } from "lucide-react";
+import { CheckCircle2, XCircle, CalendarClock, History, ChevronUp, ChevronDown } from "lucide-react";
 import { parseTags } from "../state/tasks.js";
 import { fetchTaskHistory } from "../api/client.js";
 
@@ -24,7 +24,7 @@ function StatusBadge({ status }) {
   );
 }
 
-export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete }) {
+export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReorder }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [tagsInput, setTagsInput] = useState("");
@@ -41,7 +41,18 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete }) {
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  const sortedTasks = useMemo(() => [...tasks].sort((a, b) => a.id - b.id), [tasks]);
+  const sortedTasks = useMemo(
+    () => [...tasks].sort((a, b) => (a.position ?? a.id) - (b.position ?? b.id)),
+    [tasks]
+  );
+
+  const move = (index, direction) => {
+    const next = [...sortedTasks];
+    const swapIndex = index + direction;
+    if (swapIndex < 0 || swapIndex >= next.length) return;
+    [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
+    onReorder(next.map((t) => t.id));
+  };
 
   const tomorrow = useMemo(() => {
     const d = new Date();
@@ -127,7 +138,7 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete }) {
       </form>
 
       <div className="day__list">
-        {sortedTasks.map((task) => (
+        {sortedTasks.map((task, index) => (
           <div
             key={task.id}
             className={"day__item" + (task.status !== "pending" ? " day__item--resolved" : "")}
@@ -248,6 +259,28 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete }) {
 
             {/* Actions */}
             <div className="day__actions">
+              {sortedTasks.length > 1 && editId !== task.id && statusAction?.id !== task.id ? (
+                <>
+                  <button
+                    type="button"
+                    className="btn-icon"
+                    title="Move up"
+                    disabled={index === 0}
+                    onClick={() => move(index, -1)}
+                  >
+                    <ChevronUp size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-icon"
+                    title="Move down"
+                    disabled={index === sortedTasks.length - 1}
+                    onClick={() => move(index, 1)}
+                  >
+                    <ChevronDown size={15} />
+                  </button>
+                </>
+              ) : null}
               {task.status === "pending" && editId !== task.id && statusAction?.id !== task.id ? (
                 <>
                   <button type="button" className="btn-status btn-status--success" title="Mark as Success" onClick={() => openStatusAction(task, "success")}>

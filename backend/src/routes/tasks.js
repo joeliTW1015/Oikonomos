@@ -31,13 +31,14 @@ function rowsToTasks(rows) {
     postponeDate: row.postpone_date || null,
     originTaskId: row.origin_task_id || null,
     postponeCount: row.postpone_count || 0,
+    position: row.position != null ? row.position : row.id,
     tags: row.tags ? row.tags.split("|") : []
   }));
 }
 
 const BASE_SELECT =
   "SELECT t.id, t.title, t.description, t.date, t.status, t.note, " +
-  "t.postpone_date, t.origin_task_id, t.postpone_count, " +
+  "t.postpone_date, t.origin_task_id, t.postpone_count, t.position, " +
   "GROUP_CONCAT(tags.name, '|') AS tags " +
   "FROM tasks t " +
   "LEFT JOIN task_tags tt ON tt.task_id = t.id " +
@@ -62,7 +63,7 @@ router.get("/", async (req, res, next) => {
 
     if (date) {
       rows = await all(
-        BASE_SELECT + "WHERE t.date = ? GROUP BY t.id ORDER BY t.date, t.id",
+        BASE_SELECT + "WHERE t.date = ? GROUP BY t.id ORDER BY t.date, COALESCE(t.position, t.id)",
         [date]
       );
     } else {
@@ -81,12 +82,28 @@ router.get("/", async (req, res, next) => {
       const endStr = end.toISOString().slice(0, 10);
 
       rows = await all(
-        BASE_SELECT + "WHERE t.date >= ? AND t.date < ? GROUP BY t.id ORDER BY t.date, t.id",
+        BASE_SELECT + "WHERE t.date >= ? AND t.date < ? GROUP BY t.id ORDER BY t.date, COALESCE(t.position, t.id)",
         [startStr, endStr]
       );
     }
 
     res.json(rowsToTasks(rows));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /reorder — update position of a set of tasks
+router.patch("/reorder", async (req, res, next) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "ids array required" });
+    }
+    for (let i = 0; i < ids.length; i++) {
+      await run("UPDATE tasks SET position = ? WHERE id = ?", [i, ids[i]]);
+    }
+    res.status(204).end();
   } catch (err) {
     next(err);
   }
@@ -134,6 +151,8 @@ router.post("/", async (req, res, next) => {
       "INSERT INTO tasks (title, description, date, status, completed) VALUES (?, ?, ?, 'pending', 0)",
       [String(title).trim(), description ? String(description).trim() : null, String(date)]
     );
+    // Use lastID as initial position so new tasks always sort to the end
+    await run("UPDATE tasks SET position = ? WHERE id = ?", [result.lastID, result.lastID]);
 
     const tagIds = await ensureTags(tags);
     for (const tagId of tagIds) {

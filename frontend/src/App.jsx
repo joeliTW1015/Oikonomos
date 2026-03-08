@@ -6,7 +6,7 @@ import ShoppingList from "./components/ShoppingList.jsx";
 import GoalList from "./components/GoalList.jsx";
 import LongTermTodos from "./components/LongTermTodos.jsx";
 import ChatWidget from "./components/ChatWidget.jsx";
-import { createTask, deleteTask, fetchTasks, updateTask, fetchEvents, createEvent, updateEvent, deleteEvent } from "./api/client.js";
+import { createTask, deleteTask, fetchTasks, updateTask, reorderTasks, fetchEvents, createEvent, updateEvent, deleteEvent } from "./api/client.js";
 import { groupTasksByDate, groupEventsByDate } from "./state/tasks.js";
 
 function toMonthKey(date) {
@@ -82,6 +82,15 @@ export default function App() {
     setTasks((prev) => prev.filter((task) => task.id !== id));
   };
 
+  const handleReorder = async (orderedIds) => {
+    // Optimistic update
+    setTasks((prev) => {
+      const posMap = new Map(orderedIds.map((id, i) => [id, i]));
+      return prev.map((t) => posMap.has(t.id) ? { ...t, position: posMap.get(t.id) } : t);
+    });
+    await reorderTasks(orderedIds);
+  };
+
   const handleAddEvent = async (payload) => {
     const created = await createEvent(payload);
     setEvents((prev) => [...prev, created]);
@@ -132,6 +141,7 @@ export default function App() {
             onAdd={handleAdd}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
+            onReorder={handleReorder}
           />
           <DayEvents
             date={selectedDate}

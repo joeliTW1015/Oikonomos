@@ -5,7 +5,10 @@ import DayEvents from "./components/DayEvents.jsx";
 import ShoppingList from "./components/ShoppingList.jsx";
 import GoalList from "./components/GoalList.jsx";
 import LongTermTodos from "./components/LongTermTodos.jsx";
-import ChatWidget from "./components/ChatWidget.jsx";
+import ChatPage from "./components/ChatPage.jsx";
+import SummaryPage from "./components/SummaryPage.jsx";
+import SettingsPage from "./components/SettingsPage.jsx";
+import NavBar from "./components/NavBar.jsx";
 import { createTask, deleteTask, fetchTasks, updateTask, reorderTasks, fetchEvents, createEvent, updateEvent, deleteEvent } from "./api/client.js";
 import { groupTasksByDate, groupEventsByDate } from "./state/tasks.js";
 
@@ -23,6 +26,7 @@ function toDateKey(date) {
 }
 
 export default function App() {
+  const [activePage, setActivePage] = useState("calendar");
   const [monthDate, setMonthDate] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(() => toDateKey(new Date()));
   const [tasks, setTasks] = useState([]);
@@ -83,7 +87,6 @@ export default function App() {
   };
 
   const handleReorder = async (orderedIds) => {
-    // Optimistic update
     setTasks((prev) => {
       const posMap = new Map(orderedIds.map((id, i) => [id, i]));
       return prev.map((t) => posMap.has(t.id) ? { ...t, position: posMap.get(t.id) } : t);
@@ -118,45 +121,55 @@ export default function App() {
         </div>
       </header>
 
-      <GoalList />
+      <div className={`page-content${activePage === "chat" ? " page-content--chat" : ""}`}>
+        {activePage === "calendar" && (
+          <>
+            <GoalList />
+            <main className="app__main">
+              <div className="app__left">
+                <Calendar
+                  monthDate={monthDate}
+                  tasksByDate={tasksByDate}
+                  eventsByDate={eventsByDate}
+                  selectedDate={selectedDate}
+                  onSelectDate={setSelectedDate}
+                  onPrevMonth={handlePrevMonth}
+                  onNextMonth={handleNextMonth}
+                />
+              </div>
+              <section className="app__panel">
+                {loading ? <p className="app__loading">Loading…</p> : null}
+                {error ? <p className="error">{error}</p> : null}
+                <DayTasks
+                  date={selectedDate}
+                  tasks={dayTasks}
+                  onAdd={handleAdd}
+                  onUpdate={handleUpdate}
+                  onDelete={handleDelete}
+                  onReorder={handleReorder}
+                />
+                <DayEvents
+                  date={selectedDate}
+                  events={dayEvents}
+                  onAdd={handleAddEvent}
+                  onUpdate={handleUpdateEvent}
+                  onDelete={handleDeleteEvent}
+                />
+              </section>
+              <div className="app__secondary">
+                <LongTermTodos />
+                <ShoppingList />
+              </div>
+            </main>
+          </>
+        )}
 
-      <main className="app__main">
-        <div className="app__left">
-          <Calendar
-            monthDate={monthDate}
-            tasksByDate={tasksByDate}
-            eventsByDate={eventsByDate}
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-            onPrevMonth={handlePrevMonth}
-            onNextMonth={handleNextMonth}
-          />
-        </div>
-        <section className="app__panel">
-          {loading ? <p className="app__loading">Loading…</p> : null}
-          {error ? <p className="error">{error}</p> : null}
-          <DayTasks
-            date={selectedDate}
-            tasks={dayTasks}
-            onAdd={handleAdd}
-            onUpdate={handleUpdate}
-            onDelete={handleDelete}
-            onReorder={handleReorder}
-          />
-          <DayEvents
-            date={selectedDate}
-            events={dayEvents}
-            onAdd={handleAddEvent}
-            onUpdate={handleUpdateEvent}
-            onDelete={handleDeleteEvent}
-          />
-        </section>
-        <div className="app__secondary">
-          <LongTermTodos />
-          <ShoppingList />
-        </div>
-      </main>
-      <ChatWidget selectedDate={selectedDate} />
+        {activePage === "chat" && <ChatPage selectedDate={selectedDate} />}
+        {activePage === "summary" && <SummaryPage />}
+        {activePage === "settings" && <SettingsPage />}
+      </div>
+
+      <NavBar activePage={activePage} onNavigate={setActivePage} />
     </div>
   );
 }

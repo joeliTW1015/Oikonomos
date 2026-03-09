@@ -24,6 +24,8 @@ function buildCalendarDays(monthDate) {
   return days;
 }
 
+const TODAY = formatDate(new Date());
+
 export default function Calendar({
   monthDate,
   tasksByDate,
@@ -58,6 +60,7 @@ export default function Calendar({
           const isoDate = formatDate(day);
           const isCurrentMonth = day.getMonth() === month;
           const isSelected = isoDate === selectedDate;
+          const isToday = isoDate === TODAY;
           const hasTasks = (tasksByDate[isoDate] || []).length > 0;
           const dayEvents = (eventsByDate || {})[isoDate] || [];
           const visibleEvents = dayEvents.slice(0, 2);
@@ -69,7 +72,8 @@ export default function Calendar({
               className={
                 "calendar__day" +
                 (isCurrentMonth ? "" : " calendar__day--muted") +
-                (isSelected ? " calendar__day--selected" : "")
+                (isSelected ? " calendar__day--selected" : "") +
+                (isToday ? " calendar__day--today" : "")
               }
               onClick={() => onSelectDate(isoDate)}
             >

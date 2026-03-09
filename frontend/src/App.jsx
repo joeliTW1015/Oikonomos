@@ -109,6 +109,18 @@ export default function App() {
     setEvents((prev) => prev.filter((e) => e.id !== id));
   };
 
+  const handleRefresh = () => {
+    setLoading(true);
+    Promise.all([fetchTasks(monthKey), fetchEvents(monthKey)])
+      .then(([taskData, eventData]) => {
+        setTasks(taskData);
+        setEvents(eventData);
+        setError(null);
+      })
+      .catch((err) => setError(err.message || "Failed to load"))
+      .finally(() => setLoading(false));
+  };
+
   const dayTasks = tasksByDate[selectedDate] || [];
   const dayEvents = eventsByDate[selectedDate] || [];
 
@@ -164,7 +176,7 @@ export default function App() {
           </>
         )}
 
-        {activePage === "chat" && <ChatPage selectedDate={selectedDate} />}
+        {activePage === "chat" && <ChatPage selectedDate={selectedDate} onRefresh={handleRefresh} />}
         {activePage === "summary" && <SummaryPage />}
         {activePage === "settings" && <SettingsPage />}
       </div>

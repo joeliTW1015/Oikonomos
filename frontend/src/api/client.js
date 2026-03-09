@@ -137,3 +137,15 @@ export async function sendChatMessage(messages, date) {
     body: JSON.stringify({ messages, date })
   });
 }
+
+export async function executeAction(action) {
+  const { type, params } = action;
+  switch (type) {
+    case "add_task":           return createTask(params);
+    case "add_event":          return createEvent(params);
+    case "add_shopping_item":  return createShoppingItem(params);
+    case "add_goal":           return createGoal(params);
+    case "add_long_term_todo": return createLongTermTodo(params);
+    default: throw new Error(`Unknown action type: ${type}`);
+  }
+}

@@ -1,16 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Send } from "lucide-react";
-import { sendChatMessage } from "../api/client.js";
+import { sendChatMessage, executeAction } from "../api/client.js";
+import PendingActionsPanel from "./PendingActionsPanel.jsx";
 
-export default function ChatPage({ selectedDate }) {
+export default function ChatPage({ selectedDate, onRefresh }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pendingActions, setPendingActions] = useState([]);
+  const [editedParams, setEditedParams] = useState({});
+  const [confirming, setConfirming] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+  }, [messages, loading, pendingActions]);
 
   async function handleSend() {
     const text = input.trim();
@@ -21,10 +25,24 @@ export default function ChatPage({ selectedDate }) {
     setMessages(nextMessages);
     setInput("");
     setLoading(true);
+    setPendingActions([]);
+    setEditedParams({});
 
     try {
       const data = await sendChatMessage(nextMessages, selectedDate);
-      setMessages([...nextMessages, { role: "assistant", content: data.reply }]);
+
+      if (data.actions && data.actions.length > 0) {
+        setPendingActions(data.actions);
+        const params = {};
+        for (const action of data.actions) {
+          params[action.id] = { ...action.params };
+        }
+        setEditedParams(params);
+      }
+
+      if (data.reply) {
+        setMessages([...nextMessages, { role: "assistant", content: data.reply }]);
+      }
     } catch (err) {
       setMessages([...nextMessages, { role: "assistant", content: `Error: ${err.message}` }]);
     } finally {
@@ -39,10 +57,50 @@ export default function ChatPage({ selectedDate }) {
     }
   }
 
+  function handleEditParam(actionId, key, value) {
+    setEditedParams((prev) => ({
+      ...prev,
+      [actionId]: { ...prev[actionId], [key]: value },
+    }));
+  }
+
+  function handleRemoveAction(actionId) {
+    setPendingActions((prev) => prev.filter((a) => a.id !== actionId));
+  }
+
+  async function handleConfirm() {
+    setConfirming(true);
+    const count = pendingActions.length;
+    try {
+      for (const action of pendingActions) {
+        await executeAction({ ...action, params: editedParams[action.id] || action.params });
+      }
+      onRefresh?.();
+      setPendingActions([]);
+      setEditedParams({});
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: `Done! Added ${count} item${count !== 1 ? "s" : ""}.` },
+      ]);
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: `Error saving: ${err.message}` },
+      ]);
+    } finally {
+      setConfirming(false);
+    }
+  }
+
+  function handleDismiss() {
+    setPendingActions([]);
+    setEditedParams({});
+  }
+
   return (
     <div className="chat-page">
       <div className="chat-page__messages">
-        {messages.length === 0 && (
+        {messages.length === 0 && pendingActions.length === 0 && (
           <p className="chat-page__empty">
             Ask me anything about your tasks, goals, or schedule.
           </p>
@@ -52,6 +110,18 @@ export default function ChatPage({ selectedDate }) {
             {msg.content}
           </div>
         ))}
+        {pendingActions.length > 0 && (
+          <PendingActionsPanel
+            actions={pendingActions}
+            editedParams={editedParams}
+            onEditParam={handleEditParam}
+            onRemove={handleRemoveAction}
+            onConfirm={handleConfirm}
+            onDismiss={handleDismiss}
+            confirming={confirming}
+            selectedDate={selectedDate}
+          />
+        )}
         {loading && (
           <div className="chat__bubble chat__bubble--assistant chat__thinking">
             <span className="chat__dot" />

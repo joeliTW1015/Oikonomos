@@ -1748,3 +1748,164 @@ button, a {
   font-size: 14px;
   color: var(--text-muted);
 }
+
+/* ── Pending Actions Panel ────────────────────────────────────── */
+.pending-panel {
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin: 8px 0;
+}
+
+.pending-panel__header {
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 4px;
+  color: var(--text-1);
+}
+
+.pending-panel__subtitle {
+  font-size: 0.75rem;
+  color: var(--text-2);
+  margin-bottom: 10px;
+}
+
+.pending-panel__footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.pending-panel__btn {
+  padding: 7px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.pending-panel__btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.pending-panel__btn--primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.pending-panel__btn--primary:hover:not(:disabled) { opacity: 0.85; }
+
+.pending-panel__btn--ghost {
+  background: transparent;
+  color: var(--text-2);
+  border-color: var(--border-2);
+}
+
+.pending-panel__btn--ghost:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.pending-action {
+  background: var(--surface-3);
+  border-radius: var(--radius);
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+.pending-action:last-child { margin-bottom: 0; }
+
+.pending-action__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pending-action__type {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.pending-action__remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.pending-action__remove:hover { color: var(--text-1); }
+
+.pending-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 6px;
+}
+
+.pending-field:last-child { margin-bottom: 0; }
+
+.pending-field label {
+  font-size: 0.68rem;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pending-field input,
+.pending-field textarea {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-1);
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.pending-field input:focus,
+.pending-field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.pending-field textarea {
+  resize: vertical;
+  min-height: 48px;
+}
+
+.pending-type-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.pending-type-toggle button {
+  flex: 1;
+  padding: 5px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pending-type-toggle button.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}

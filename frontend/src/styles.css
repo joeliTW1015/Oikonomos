@@ -212,6 +212,17 @@ input, select, textarea, button {
   background: var(--surface-3);
 }
 
+.calendar__day--today .calendar__day-number {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .calendar__day-number {
   font-size: 12px;
   font-weight: 600;

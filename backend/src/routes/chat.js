@@ -1,6 +1,6 @@
 const express = require("express");
 const { all } = require("../db");
-const { MODEL, SYSTEM_PROMPT, buildContextBlock } = require("../prompts");
+const { MODEL, SYSTEM_PROMPT, TOOLS, buildContextBlock } = require("../prompts");
 
 const router = express.Router();
 
@@ -50,6 +50,7 @@ router.post("/", async (req, res) => {
     const ollamaBody = {
       model: MODEL,
       stream: false,
+      tools: TOOLS,
       messages: [{ role: "system", content: systemContent }, ...messages],
     };
 
@@ -66,7 +67,17 @@ router.post("/", async (req, res) => {
     }
 
     const data = await ollamaRes.json();
-    res.json({ reply: data.message.content });
+
+    const rawToolCalls = data.message?.tool_calls || [];
+    const actions = rawToolCalls.map((tc, i) => {
+      let params = tc.function.arguments || {};
+      if (typeof params === "string") {
+        try { params = JSON.parse(params); } catch { params = {}; }
+      }
+      return { id: `action-${Date.now()}-${i}`, type: tc.function.name, params };
+    });
+
+    res.json({ reply: data.message?.content || "", actions });
   } catch (err) {
     console.error("Chat route error:", err);
     res.status(500).json({ error: "Internal server error" });

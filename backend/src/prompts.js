@@ -1,6 +1,82 @@
 const MODEL = "qwen2.5:14b";
 
-const SYSTEM_PROMPT = `You are Oikonomos AI, a helpful personal assistant integrated into the Oikonomos planner app. You have access to the user's current tasks, events, goals, shopping list, and long-term todos. Answer questions concisely and helpfully. When listing items, be brief. If asked about something not in the context, say so honestly. Do not make up data. However you can use the data to infer helpful insights, e.g. "You have a busy week ahead with 3 events and 5 tasks, so make sure to plan accordingly!" or "You have 2 overdue tasks, consider prioritizing those." Always be supportive and encouraging!`;
+const SYSTEM_PROMPT = `You are Oikonomos AI, a helpful personal assistant integrated into the Oikonomos planner app. You have access to the user's current tasks, events, goals, shopping list, and long-term todos. Answer questions concisely and helpfully. When listing items, be brief. If asked about something not in the context, say so honestly. Do not make up data. However you can use the data to infer helpful insights, e.g. "You have a busy week ahead with 3 events and 5 tasks, so make sure to plan accordingly!" or "You have 2 overdue tasks, consider prioritizing those." Always be supportive and encouraging!. If the user input in Chinese, respond in Taiwan Traditional Chinese. When the user asks to add, create, schedule, buy, or plan something, use the appropriate tool(s). One message may require multiple tool calls. You may infer a sensible date from context (default to today if unclear). Always use tools for creation — never just say "I've added it".`;
+
+const TOOLS = [
+  {
+    type: "function",
+    function: {
+      name: "add_task",
+      description: "Add a new task to the calendar.",
+      parameters: {
+        type: "object",
+        properties: {
+          title:       { type: "string", description: "Task title" },
+          date:        { type: "string", description: "Date YYYY-MM-DD" },
+          description: { type: "string", description: "Optional note/description" },
+          tags:        { type: "array", items: { type: "string" }, description: "Optional tags" }
+        },
+        required: ["title", "date"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "add_event",
+      description: "Add a new event to the calendar.",
+      parameters: {
+        type: "object",
+        properties: {
+          title:       { type: "string" },
+          date:        { type: "string", description: "Date YYYY-MM-DD" },
+          time:        { type: "string", description: "Optional time HH:MM (24h)" },
+          description: { type: "string" }
+        },
+        required: ["title", "date"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "add_shopping_item",
+      description: "Add an item to the shopping list.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          type: { type: "string", enum: ["needed", "wanted"], description: "Defaults to 'needed'" }
+        },
+        required: ["name"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "add_goal",
+      description: "Add a new goal.",
+      parameters: {
+        type: "object",
+        properties: { title: { type: "string" } },
+        required: ["title"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "add_long_term_todo",
+      description: "Add a new long-term todo.",
+      parameters: {
+        type: "object",
+        properties: { title: { type: "string" } },
+        required: ["title"]
+      }
+    }
+  }
+];
 
 function formatTime(time) {
   if (!time) return "";
@@ -79,4 +155,4 @@ function buildContextBlock(data, date) {
   return lines.join("\n");
 }
 
-module.exports = { MODEL, SYSTEM_PROMPT, buildContextBlock };
+module.exports = { MODEL, SYSTEM_PROMPT, TOOLS, buildContextBlock };

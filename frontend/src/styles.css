@@ -431,13 +431,11 @@ input, select, textarea, button {
   white-space: nowrap;
 }
 
-.week-grid__task-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #f97316;
-  flex-shrink: 0;
-  display: inline-block;
+.week-grid__task-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  align-content: flex-start;
 }
 
 .week-grid__scroll {

@@ -82,13 +82,22 @@ export default function WeekGrid({ days, eventsByDate, tasksByDate, selectedDate
           const untimedEvents = (eventsByDate[iso] || []).filter(
             (e) => !e.time || !e.time.match(/\d+:\d+/)
           );
-          const hasTasks = (tasksByDate[iso] || []).length > 0;
+          const dayTasks = tasksByDate[iso] || [];
           return (
             <div key={iso} className="week-grid__allday-cell" onClick={() => onSelectDate(iso)}>
               {untimedEvents.map((e) => (
                 <span key={e.id} className="week-grid__allday-chip">{e.title}</span>
               ))}
-              {hasTasks && <span className="week-grid__task-dot" />}
+              {dayTasks.length > 0 && (
+                <span className="week-grid__task-dots">
+                  {dayTasks.map((task) => (
+                    <span
+                      key={task.id}
+                      className={`calendar__task-dot calendar__task-dot--${task.status}`}
+                    />
+                  ))}
+                </span>
+              )}
             </div>
           );
         })}

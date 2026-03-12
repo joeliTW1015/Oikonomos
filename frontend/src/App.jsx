@@ -25,8 +25,15 @@ function toDateKey(date) {
   return `${year}-${month}-${day}`;
 }
 
+function addDays(isoDate, n) {
+  const d = new Date(isoDate + "T00:00:00");
+  d.setDate(d.getDate() + n);
+  return toDateKey(d);
+}
+
 export default function App() {
   const [activePage, setActivePage] = useState("calendar");
+  const [calendarView, setCalendarView] = useState("month");
   const [monthDate, setMonthDate] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(() => toDateKey(new Date()));
   const [tasks, setTasks] = useState([]);
@@ -63,6 +70,26 @@ export default function App() {
     const next = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1);
     setMonthDate(next);
     setSelectedDate(toDateKey(next));
+  };
+
+  const handlePrevWeek = () => {
+    const newDate = addDays(selectedDate, -7);
+    setSelectedDate(newDate);
+    const d = new Date(newDate + "T00:00:00");
+    const newMonthKey = toMonthKey(d);
+    if (newMonthKey !== monthKey) {
+      setMonthDate(new Date(d.getFullYear(), d.getMonth(), 1));
+    }
+  };
+
+  const handleNextWeek = () => {
+    const newDate = addDays(selectedDate, 7);
+    setSelectedDate(newDate);
+    const d = new Date(newDate + "T00:00:00");
+    const newMonthKey = toMonthKey(d);
+    if (newMonthKey !== monthKey) {
+      setMonthDate(new Date(d.getFullYear(), d.getMonth(), 1));
+    }
   };
 
   const handleAdd = async (payload) => {
@@ -147,6 +174,10 @@ export default function App() {
                   onSelectDate={setSelectedDate}
                   onPrevMonth={handlePrevMonth}
                   onNextMonth={handleNextMonth}
+                  view={calendarView}
+                  onViewChange={setCalendarView}
+                  onPrevWeek={handlePrevWeek}
+                  onNextWeek={handleNextWeek}
                 />
               </div>
               <section className="app__panel">

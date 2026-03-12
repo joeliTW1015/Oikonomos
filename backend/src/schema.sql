@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS tasks (
   postpone_date TEXT,
   origin_task_id INTEGER,
   postpone_count INTEGER NOT NULL DEFAULT 0,
+  google_event_id TEXT,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -32,6 +34,8 @@ CREATE TABLE IF NOT EXISTS events (
   title TEXT NOT NULL,
   description TEXT,
   time TEXT,
+  google_event_id TEXT,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -55,6 +59,11 @@ CREATE TABLE IF NOT EXISTS long_term_todos (
   title TEXT NOT NULL,
   done INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_tasks_date ON tasks(date);

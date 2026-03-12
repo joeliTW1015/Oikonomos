@@ -24,6 +24,22 @@ function buildCalendarDays(monthDate) {
   return days;
 }
 
+function buildWeekDays(selectedDate) {
+  const d = new Date(selectedDate + "T00:00:00");
+  const sunday = new Date(d);
+  sunday.setDate(d.getDate() - d.getDay());
+  return Array.from({ length: 7 }, (_, i) => {
+    const day = new Date(sunday);
+    day.setDate(sunday.getDate() + i);
+    return day;
+  });
+}
+
+function formatWeekRange(days) {
+  const fmt = (d) => d.toLocaleString("default", { month: "short", day: "numeric" });
+  return `${fmt(days[0])} \u2013 ${fmt(days[6])}, ${days[6].getFullYear()}`;
+}
+
 const TODAY = formatDate(new Date());
 
 export default function Calendar({
@@ -33,20 +49,46 @@ export default function Calendar({
   selectedDate,
   onSelectDate,
   onPrevMonth,
-  onNextMonth
+  onNextMonth,
+  view,
+  onViewChange,
+  onPrevWeek,
+  onNextWeek,
 }) {
-  const days = buildCalendarDays(monthDate);
+  const isWeek = view === "week";
   const month = monthDate.getMonth();
+  const days = isWeek ? buildWeekDays(selectedDate) : buildCalendarDays(monthDate);
+  const headerTitle = isWeek
+    ? formatWeekRange(days)
+    : `${monthDate.toLocaleString("default", { month: "long" })} ${monthDate.getFullYear()}`;
+  const handlePrev = isWeek ? onPrevWeek : onPrevMonth;
+  const handleNext = isWeek ? onNextWeek : onNextMonth;
+  const maxEvents = isWeek ? 5 : 2;
 
   return (
     <section className="calendar">
       <header className="calendar__header">
-        <button type="button" onClick={onPrevMonth}>&#8592;</button>
-        <h2>
-          {monthDate.toLocaleString("default", { month: "long" })}{" "}
-          {monthDate.getFullYear()}
-        </h2>
-        <button type="button" onClick={onNextMonth}>&#8594;</button>
+        <button type="button" onClick={handlePrev}>&#8592;</button>
+        <h2>{headerTitle}</h2>
+        <div className="calendar__header-right">
+          <div className="calendar__view-toggle">
+            <button
+              type="button"
+              className={`calendar__view-btn${!isWeek ? " calendar__view-btn--active" : ""}`}
+              onClick={() => onViewChange("month")}
+            >
+              Month
+            </button>
+            <button
+              type="button"
+              className={`calendar__view-btn${isWeek ? " calendar__view-btn--active" : ""}`}
+              onClick={() => onViewChange("week")}
+            >
+              Week
+            </button>
+          </div>
+          <button type="button" onClick={handleNext}>&#8594;</button>
+        </div>
       </header>
       <div className="calendar__weekdays">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label) => (
@@ -55,15 +97,15 @@ export default function Calendar({
           </div>
         ))}
       </div>
-      <div className="calendar__grid">
+      <div className={`calendar__grid${isWeek ? " calendar__grid--week" : ""}`}>
         {days.map((day) => {
           const isoDate = formatDate(day);
-          const isCurrentMonth = day.getMonth() === month;
+          const isCurrentMonth = isWeek ? true : day.getMonth() === month;
           const isSelected = isoDate === selectedDate;
           const isToday = isoDate === TODAY;
           const hasTasks = (tasksByDate[isoDate] || []).length > 0;
           const dayEvents = (eventsByDate || {})[isoDate] || [];
-          const visibleEvents = dayEvents.slice(0, 2);
+          const visibleEvents = dayEvents.slice(0, maxEvents);
 
           return (
             <button

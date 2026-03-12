@@ -1,9 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const { run, all, get } = require("../db");
+const { pushEventToGoogle, deleteFromGoogle } = require("../google/sync");
 
 function rowToEvent(r) {
-  return { id: r.id, date: r.date, title: r.title, description: r.description || null, time: r.time || null };
+  return {
+    id: r.id,
+    date: r.date,
+    title: r.title,
+    description: r.description || null,
+    time: r.time || null,
+    google_event_id: r.google_event_id || null,
+  };
 }
 
 router.get("/", async (req, res, next) => {
@@ -19,7 +27,7 @@ router.get("/", async (req, res, next) => {
 
     if (date) {
       rows = await all(
-        "SELECT id, date, title, description, time FROM events WHERE date = ? ORDER BY time, id",
+        "SELECT id, date, title, description, time, google_event_id FROM events WHERE date = ? ORDER BY time, id",
         [date]
       );
     } else {
@@ -38,7 +46,7 @@ router.get("/", async (req, res, next) => {
       const endStr = end.toISOString().slice(0, 10);
 
       rows = await all(
-        "SELECT id, date, title, description, time FROM events WHERE date >= ? AND date < ? ORDER BY date, time, id",
+        "SELECT id, date, title, description, time, google_event_id FROM events WHERE date >= ? AND date < ? ORDER BY date, time, id",
         [startStr, endStr]
       );
     }
@@ -59,12 +67,19 @@ router.post("/", async (req, res, next) => {
     }
 
     const result = await run(
-      "INSERT INTO events (title, date, description, time) VALUES (?, ?, ?, ?)",
+      "INSERT INTO events (title, date, description, time, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)",
       [String(title).trim(), String(date), description ? String(description).trim() : null, time ? String(time).trim() : null]
     );
 
-    const row = await get("SELECT id, date, title, description, time FROM events WHERE id = ?", [result.lastID]);
-    res.status(201).json(rowToEvent(row));
+    const row = await get(
+      "SELECT id, date, title, description, time, google_event_id FROM events WHERE id = ?",
+      [result.lastID]
+    );
+    const event = rowToEvent(row);
+    res.status(201).json(event);
+
+    // Auto-push to Google (fire-and-forget)
+    pushEventToGoogle(event).catch((e) => console.warn("Google sync push failed:", e.message));
   } catch (err) {
     next(err);
   }
@@ -79,7 +94,10 @@ router.put("/:id", async (req, res, next) => {
       return;
     }
 
-    const existing = await get("SELECT id FROM events WHERE id = ?", [eventId]);
+    const existing = await get(
+      "SELECT id, google_event_id FROM events WHERE id = ?",
+      [eventId]
+    );
     if (!existing) {
       res.status(404).json({ error: "event not found" });
       return;
@@ -93,12 +111,19 @@ router.put("/:id", async (req, res, next) => {
     }
 
     await run(
-      "UPDATE events SET title = ?, description = ?, time = ? WHERE id = ?",
+      "UPDATE events SET title = ?, description = ?, time = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
       [String(title).trim(), description ? String(description).trim() : null, time ? String(time).trim() : null, eventId]
     );
 
-    const row = await get("SELECT id, date, title, description, time FROM events WHERE id = ?", [eventId]);
-    res.json(rowToEvent(row));
+    const row = await get(
+      "SELECT id, date, title, description, time, google_event_id FROM events WHERE id = ?",
+      [eventId]
+    );
+    const event = rowToEvent(row);
+    res.json(event);
+
+    // Auto-push to Google (fire-and-forget)
+    pushEventToGoogle(event).catch((e) => console.warn("Google sync push failed:", e.message));
   } catch (err) {
     next(err);
   }
@@ -113,8 +138,20 @@ router.delete("/:id", async (req, res, next) => {
       return;
     }
 
+    const existing = await get(
+      "SELECT google_event_id FROM events WHERE id = ?",
+      [eventId]
+    );
+
     await run("DELETE FROM events WHERE id = ?", [eventId]);
     res.status(204).end();
+
+    // Auto-delete from Google (fire-and-forget)
+    if (existing?.google_event_id) {
+      deleteFromGoogle(existing.google_event_id).catch((e) =>
+        console.warn("Google sync delete failed:", e.message)
+      );
+    }
   } catch (err) {
     next(err);
   }

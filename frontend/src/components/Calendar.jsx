@@ -68,7 +68,7 @@ export default function Calendar({
   return (
     <section className="calendar">
       <header className="calendar__header">
-        <button type="button" onClick={handlePrev}>&#8592;</button>
+        <button type="button" className="calendar__nav-btn" onClick={handlePrev}>&#8592;</button>
         <h2>{headerTitle}</h2>
         <div className="calendar__header-right">
           <div className="calendar__view-toggle">
@@ -87,7 +87,7 @@ export default function Calendar({
               Week
             </button>
           </div>
-          <button type="button" onClick={handleNext}>&#8594;</button>
+          <button type="button" className="calendar__nav-btn" onClick={handleNext}>&#8594;</button>
         </div>
       </header>
       <div className="calendar__weekdays">

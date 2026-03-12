@@ -52,6 +52,7 @@ export default function WeekGrid({ days, eventsByDate, tasksByDate, selectedDate
 
   return (
     <div className="week-grid">
+      <div className="week-grid__canvas">
       {/* Day name + date header */}
       <div className="week-grid__header">
         <div className="week-grid__gutter" />
@@ -154,6 +155,7 @@ export default function WeekGrid({ days, eventsByDate, tasksByDate, selectedDate
             );
           })}
         </div>
+      </div>
       </div>
     </div>
   );

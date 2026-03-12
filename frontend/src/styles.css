@@ -343,6 +343,10 @@ input, select, textarea, button {
 
 .week-grid__gutter {
   border-right: 1px solid var(--border);
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--surface);
 }
 
 .week-grid__gutter--label {
@@ -438,6 +442,11 @@ input, select, textarea, button {
   align-content: flex-start;
 }
 
+.week-grid__canvas {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .week-grid__scroll {
   overflow-y: auto;
   max-height: 560px;
@@ -450,6 +459,10 @@ input, select, textarea, button {
 
 .week-grid__time-col {
   border-right: 1px solid var(--border);
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--surface);
 }
 
 .week-grid__hour-label {
@@ -1599,10 +1612,22 @@ button, a {
   }
 }
 
-/* iPad Mini 6 portrait (701px – 900px): slight padding reduction */
+/* iPad portrait (701px – 900px) */
 @media (min-width: 701px) and (max-width: 900px) {
   .app__header { padding: 16px 18px 0; }
   .page-content { padding-left: 18px; padding-right: 18px; }
+
+  /* Calendar — month view */
+  .calendar__day { min-height: 74px; }
+
+  /* Calendar — week view */
+  .week-grid__scroll { max-height: 620px; }
+  .week-grid__day-num { font-size: 16px; width: 28px; height: 28px; }
+}
+
+/* iPad landscape / large tablet (901px – 1100px) */
+@media (min-width: 901px) and (max-width: 1100px) {
+  .week-grid__scroll { max-height: 660px; }
 }
 
 /* ── iPhone 11 Pro and small phones (≤ 480px) ── */
@@ -1624,14 +1649,33 @@ button, a {
   .app__header-sub { display: none; }
   .app__main { gap: 10px; }
 
-  /* Calendar */
-  .calendar { padding: 12px 10px; }
-  .calendar__header { margin-bottom: 10px; }
-  .calendar__header h2 { font-size: 14px; }
-  .calendar__nav-btn { padding: 6px 10px; font-size: 14px; }
-  .calendar__grid { gap: 3px; }
-  .calendar__day { min-height: 52px; padding: 5px 4px; }
+  /* Calendar — month view */
+  .calendar { padding: 10px 8px; }
+  .calendar__header { margin-bottom: 8px; }
+  .calendar__header h2 { font-size: 13px; }
+  .calendar__header-right { gap: 5px; }
+  .calendar__nav-btn { padding: 5px 9px; font-size: 14px; }
+  .calendar__view-btn { padding: 4px 8px; font-size: 11px; font-weight: 600; }
+  .calendar__view-toggle { border-width: 1px; }
+  .calendar__view-btn + .calendar__view-btn { border-left-width: 1px; }
+  .calendar__grid { gap: 2px; }
+  .calendar__day { min-height: 52px; padding: 4px 3px; }
   .calendar__day-number { font-size: 11px; }
+  .calendar__task-dot { width: 4px; height: 4px; }
+  .calendar__day-body { gap: 1px; margin-top: 2px; }
+
+  /* Calendar — week view */
+  .week-grid { margin-top: 10px; }
+  .week-grid__header,
+  .week-grid__allday-row,
+  .week-grid__body { grid-template-columns: 38px repeat(7, minmax(58px, 1fr)); }
+  .week-grid__scroll { max-height: 400px; }
+  .week-grid__day-header { padding: 6px 2px 4px; gap: 1px; }
+  .week-grid__day-name { font-size: 9px; letter-spacing: 0; }
+  .week-grid__day-num { font-size: 14px; width: 26px; height: 26px; }
+  .week-grid__hour-label { font-size: 9px; padding: 0 4px; }
+  .week-grid__event-title { font-size: 10px; }
+  .week-grid__event-time { font-size: 9px; }
 
   /* Panel */
   .app__panel { padding: 14px 12px; }

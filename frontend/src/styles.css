@@ -918,6 +918,22 @@ input, select, textarea, button {
   border-color: var(--accent);
 }
 
+.time-picker__minute {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  width: 44px;
+  text-align: center;
+}
+
+.time-picker__minute:focus {
+  border-color: var(--accent);
+}
+
 .time-picker__sep {
   font-weight: 700;
   color: var(--text-muted);

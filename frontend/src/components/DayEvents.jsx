@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 
 const HOURS = ["1","2","3","4","5","6","7","8","9","10","11","12"];
-const MINUTES = ["00","15","30","45"];
 
 const DEFAULT_TIME = {
   enabled: false,
@@ -50,8 +49,29 @@ function toSortMinutes(timeStr) {
   return h * 60 + m;
 }
 
+function MinuteInput({ value, onChange }) {
+  const handleChange = (e) => {
+    const raw = e.target.value.replace(/\D/g, "").slice(0, 2);
+    const n = parseInt(raw, 10);
+    if (raw === "" || (n >= 0 && n <= 59)) {
+      onChange(raw === "" ? "00" : String(n).padStart(2, "0"));
+    }
+  };
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      className="time-picker__minute"
+      value={value}
+      onChange={handleChange}
+      maxLength={2}
+    />
+  );
+}
+
 function TimePicker({ value, onChange }) {
   const set = (key) => (e) => onChange({ ...value, [key]: e.target.value });
+  const setMinute = (key) => (m) => onChange({ ...value, [key]: m });
   const toggle = (key) => () => onChange({ ...value, [key]: !value[key] });
 
   return (
@@ -68,9 +88,7 @@ function TimePicker({ value, onChange }) {
               {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
             </select>
             <span className="time-picker__sep">:</span>
-            <select value={value.startM} onChange={set("startM")}>
-              {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
+            <MinuteInput value={value.startM} onChange={setMinute("startM")} />
             <select value={value.startP} onChange={set("startP")}>
               <option value="AM">AM</option>
               <option value="PM">PM</option>
@@ -89,9 +107,7 @@ function TimePicker({ value, onChange }) {
                 {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
               </select>
               <span className="time-picker__sep">:</span>
-              <select value={value.endM} onChange={set("endM")}>
-                {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
+              <MinuteInput value={value.endM} onChange={setMinute("endM")} />
               <select value={value.endP} onChange={set("endP")}>
                 <option value="AM">AM</option>
                 <option value="PM">PM</option>

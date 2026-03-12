@@ -113,9 +113,7 @@ export default function Calendar({
               const isCurrentMonth = day.getMonth() === month;
               const isSelected = isoDate === selectedDate;
               const isToday = isoDate === TODAY;
-              const hasTasks = (tasksByDate[isoDate] || []).length > 0;
-              const dayEvents = (eventsByDate || {})[isoDate] || [];
-              const visibleEvents = dayEvents.slice(0, 2);
+              const dayTasks = tasksByDate[isoDate] || [];
 
               return (
                 <button
@@ -131,16 +129,13 @@ export default function Calendar({
                 >
                   <span className="calendar__day-number">{day.getDate()}</span>
                   <span className="calendar__day-body">
-                    {visibleEvents.map((event) => (
-                      <span key={event.id} className="calendar__event-chip">
-                        {event.time ? (
-                          <span className="calendar__event-time">{event.time} </span>
-                        ) : null}
-                        {event.title}
-                      </span>
+                    {dayTasks.map((task) => (
+                      <span
+                        key={task.id}
+                        className={`calendar__task-dot calendar__task-dot--${task.status}`}
+                      />
                     ))}
                   </span>
-                  {hasTasks ? <span className="calendar__dot" /> : null}
                 </button>
               );
             })}

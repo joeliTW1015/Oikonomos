@@ -628,6 +628,26 @@ input, select, textarea, button {
   opacity: 0.85;
 }
 
+/* Drag-and-drop */
+.day__drag-handle {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+  cursor: grab;
+  flex-shrink: 0;
+  padding: 0 2px;
+  user-select: none;
+}
+.day__drag-handle:active {
+  cursor: grabbing;
+}
+.day__item[draggable="true"]:active {
+  opacity: 0.5;
+}
+.day__item--drop-target {
+  border-top: 2px solid var(--accent);
+}
+
 .day__item-header {
   display: flex;
   align-items: center;

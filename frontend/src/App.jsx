@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Calendar from "./components/Calendar.jsx";
 import DayTasks from "./components/DayTasks.jsx";
 import DayEvents from "./components/DayEvents.jsx";
@@ -11,6 +11,7 @@ import SettingsPage from "./components/SettingsPage.jsx";
 import NavBar from "./components/NavBar.jsx";
 import { createTask, deleteTask, fetchTasks, updateTask, reorderTasks, fetchEvents, createEvent, updateEvent, deleteEvent } from "./api/client.js";
 import { groupTasksByDate, groupEventsByDate } from "./state/tasks.js";
+import { getGoogleStatus, triggerSync } from "./api/settingsClient.js";
 
 function toMonthKey(date) {
   const year = date.getFullYear();
@@ -45,20 +46,66 @@ export default function App() {
   const tasksByDate = useMemo(() => groupTasksByDate(tasks), [tasks]);
   const eventsByDate = useMemo(() => groupEventsByDate(events), [events]);
 
+  // In week view a single week can span two months — collect both month keys
+  const fetchKeys = useMemo(() => {
+    if (calendarView !== "week") return [monthKey];
+    const d = new Date(selectedDate + "T00:00:00");
+    const sunday = new Date(d);
+    sunday.setDate(d.getDate() - d.getDay());
+    const saturday = new Date(sunday);
+    saturday.setDate(sunday.getDate() + 6);
+    const a = toMonthKey(sunday);
+    const b = toMonthKey(saturday);
+    return a === b ? [a] : [a, b];
+  }, [calendarView, selectedDate, monthKey]);
+
+  // Keep a ref so the interval closure always reads the latest monthKey
+  const monthKeyRef = useRef(monthKey);
+  useEffect(() => { monthKeyRef.current = monthKey; }, [monthKey]);
+
+  // Auto-sync from Google Calendar on load and every 5 minutes
+  useEffect(() => {
+    let cancelled = false;
+    async function autoSync() {
+      try {
+        const status = await getGoogleStatus();
+        if (!status?.connected || cancelled) return;
+        await triggerSync();
+        if (cancelled) return;
+        const [taskData, eventData] = await Promise.all([
+          fetchTasks(monthKeyRef.current),
+          fetchEvents(monthKeyRef.current),
+        ]);
+        if (cancelled) return;
+        setTasks(taskData);
+        setEvents(eventData);
+      } catch {
+        // Silent failure — runs in background, must not disrupt the UI
+      }
+    }
+    autoSync();
+    const interval = setInterval(autoSync, 5 * 60 * 1000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
+
   useEffect(() => {
     let isActive = true;
     setLoading(true);
-    Promise.all([fetchTasks(monthKey), fetchEvents(monthKey)])
-      .then(([taskData, eventData]) => {
+    const dedup = (arr) => [...new Map(arr.map((x) => [x.id, x])).values()];
+    Promise.all(fetchKeys.flatMap((mk) => [fetchTasks(mk), fetchEvents(mk)]))
+      .then((results) => {
         if (!isActive) return;
-        setTasks(taskData);
-        setEvents(eventData);
+        const allTasks = dedup(fetchKeys.flatMap((_, i) => results[i * 2]));
+        const allEvents = dedup(fetchKeys.flatMap((_, i) => results[i * 2 + 1]));
+        setTasks(allTasks);
+        setEvents(allEvents);
         setError(null);
       })
       .catch((err) => { if (!isActive) return; setError(err.message || "Failed to load"); })
       .finally(() => { if (!isActive) return; setLoading(false); });
     return () => { isActive = false; };
-  }, [monthKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchKeys.join(",")]);
 
   const handlePrevMonth = () => {
     const next = new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1);
@@ -138,10 +185,13 @@ export default function App() {
 
   const handleRefresh = () => {
     setLoading(true);
-    Promise.all([fetchTasks(monthKey), fetchEvents(monthKey)])
-      .then(([taskData, eventData]) => {
-        setTasks(taskData);
-        setEvents(eventData);
+    const dedup = (arr) => [...new Map(arr.map((x) => [x.id, x])).values()];
+    Promise.all(fetchKeys.flatMap((mk) => [fetchTasks(mk), fetchEvents(mk)]))
+      .then((results) => {
+        const allTasks = dedup(fetchKeys.flatMap((_, i) => results[i * 2]));
+        const allEvents = dedup(fetchKeys.flatMap((_, i) => results[i * 2 + 1]));
+        setTasks(allTasks);
+        setEvents(allEvents);
         setError(null);
       })
       .catch((err) => setError(err.message || "Failed to load"))

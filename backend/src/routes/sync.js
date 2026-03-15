@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { pullFromGoogle } = require("../google/sync");
+const { pullFromGoogle, deleteGoogleSourcedEvents } = require("../google/sync");
 const { isConnected } = require("../google/auth");
 
 router.post("/google", async (req, res, next) => {
@@ -10,6 +10,15 @@ router.post("/google", async (req, res, next) => {
     }
     const result = await pullFromGoogle();
     res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/cleanup", async (req, res, next) => {
+  try {
+    await deleteGoogleSourcedEvents();
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }

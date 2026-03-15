@@ -3,6 +3,7 @@ const router = express.Router();
 const crypto = require("crypto");
 const { google } = require("googleapis");
 const { getSetting, saveSetting, deleteSetting, getOAuth2Client, isConnected, buildAuthUrl } = require("../google/auth");
+const { deleteGoogleSourcedEvents } = require("../google/sync");
 
 // GET /api/auth/google/url — generate OAuth authorization URL
 router.get("/google/url", async (req, res, next) => {
@@ -103,6 +104,7 @@ router.delete("/google", async (req, res, next) => {
     for (const key of keysToDelete) {
       await deleteSetting(key);
     }
+    await deleteGoogleSourcedEvents();
     res.json({ ok: true });
   } catch (err) {
     next(err);

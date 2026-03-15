@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 
-const HOUR_HEIGHT = 60; // px per hour
+const HOUR_HEIGHT = 36; // px per hour
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -43,12 +43,24 @@ function formatHourLabel(h) {
   return `${h - 12} PM`;
 }
 
-export default function WeekGrid({ days, eventsByDate, tasksByDate, selectedDate, onSelectDate }) {
-  const scrollRef = useRef(null);
-
+function useNowMinutes() {
+  const [minutes, setMinutes] = useState(() => {
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
+  });
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = 8 * HOUR_HEIGHT;
+    const tick = () => {
+      const now = new Date();
+      setMinutes(now.getHours() * 60 + now.getMinutes());
+    };
+    const id = setInterval(tick, 60 * 1000);
+    return () => clearInterval(id);
   }, []);
+  return minutes;
+}
+
+export default function WeekGrid({ days, eventsByDate, tasksByDate, selectedDate, onSelectDate }) {
+  const nowMinutes = useNowMinutes();
 
   return (
     <div className="week-grid">
@@ -83,12 +95,24 @@ export default function WeekGrid({ days, eventsByDate, tasksByDate, selectedDate
           const untimedEvents = (eventsByDate[iso] || []).filter(
             (e) => !e.time || !e.time.match(/\d+:\d+/)
           );
-          const dayTasks = tasksByDate[iso] || [];
           return (
             <div key={iso} className="week-grid__allday-cell" onClick={() => onSelectDate(iso)}>
               {untimedEvents.map((e) => (
                 <span key={e.id} className="week-grid__allday-chip">{e.title}</span>
               ))}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Task dots row */}
+      <div className="week-grid__allday-row week-grid__tasks-row">
+        <div className="week-grid__gutter week-grid__gutter--label">tasks</div>
+        {days.map((day) => {
+          const iso = formatDate(day);
+          const dayTasks = tasksByDate[iso] || [];
+          return (
+            <div key={iso} className="week-grid__allday-cell" onClick={() => onSelectDate(iso)}>
               {dayTasks.length > 0 && (
                 <span className="week-grid__task-dots">
                   {dayTasks.map((task) => (
@@ -104,8 +128,8 @@ export default function WeekGrid({ days, eventsByDate, tasksByDate, selectedDate
         })}
       </div>
 
-      {/* Scrollable time grid */}
-      <div className="week-grid__scroll" ref={scrollRef}>
+      {/* Time grid */}
+      <div className="week-grid__scroll">
         <div className="week-grid__body">
           {/* Hour labels */}
           <div className="week-grid__time-col">
@@ -132,6 +156,14 @@ export default function WeekGrid({ days, eventsByDate, tasksByDate, selectedDate
                 {HOURS.map((h) => (
                   <div key={h} className="week-grid__hour-cell" />
                 ))}
+                {iso === TODAY && (
+                  <div
+                    className="week-grid__now-line"
+                    style={{ top: (nowMinutes / 60) * HOUR_HEIGHT }}
+                  >
+                    <div className="week-grid__now-dot" />
+                  </div>
+                )}
                 {timedEvents.map((event) => {
                   const style = getEventStyle(event.time);
                   if (!style) return null;

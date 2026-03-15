@@ -41,3 +41,11 @@ export async function disconnectGoogle() {
 export async function triggerSync() {
   return request("/sync/google", { method: "POST" });
 }
+
+export async function cleanupGoogleEvents() {
+  return request("/sync/cleanup", { method: "POST" });
+}
+
+export async function deleteAllEvents() {
+  return request("/events/all", { method: "DELETE" });
+}

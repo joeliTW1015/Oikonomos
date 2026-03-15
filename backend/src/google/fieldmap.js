@@ -80,16 +80,51 @@ function localTaskToGoogleEvent(task) {
 }
 
 /**
+ * Extract { date, hours, minutes } from a Google dateTime string in the
+ * event's own timezone. Falls back to parsing the offset in the string
+ * when no named timezone is provided.
+ */
+function extractLocalParts(dateTimeStr, timeZone) {
+  if (timeZone) {
+    const dt = new Date(dateTimeStr);
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+    });
+    const parts = Object.fromEntries(formatter.formatToParts(dt).map((p) => [p.type, p.value]));
+    return {
+      date: `${parts.year}-${parts.month}-${parts.day}`,
+      hours: parseInt(parts.hour, 10) % 24,
+      minutes: parseInt(parts.minute, 10),
+    };
+  }
+  // No named timezone — read the wall-clock time directly from the string
+  const match = dateTimeStr.match(/T(\d{2}):(\d{2})/);
+  return {
+    date: dateTimeStr.slice(0, 10),
+    hours: match ? parseInt(match[1], 10) : 0,
+    minutes: match ? parseInt(match[2], 10) : 0,
+  };
+}
+
+/**
  * Google Calendar event resource → local event fields.
  */
 function googleEventToLocalEvent(gEvent) {
   let date, time;
 
   if (gEvent.start?.dateTime) {
-    // Timed event
-    const dt = new Date(gEvent.start.dateTime);
-    date = dt.toISOString().slice(0, 10);
-    time = formatLocalTime(dt.getUTCHours(), dt.getUTCMinutes());
+    // Timed event — respect the event's timezone
+    const tz = gEvent.start.timeZone || null;
+    const startParts = extractLocalParts(gEvent.start.dateTime, tz);
+    date = startParts.date;
+    time = formatLocalTime(startParts.hours, startParts.minutes);
+
+    if (gEvent.end?.dateTime) {
+      const endParts = extractLocalParts(gEvent.end.dateTime, gEvent.end.timeZone || tz);
+      time += ` ~ ${formatLocalTime(endParts.hours, endParts.minutes)}`;
+    }
   } else {
     // All-day event
     date = gEvent.start?.date || null;

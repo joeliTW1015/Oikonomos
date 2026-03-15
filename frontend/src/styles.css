@@ -418,8 +418,13 @@ input, select, textarea, button {
 .week-grid__allday-row {
   display: grid;
   grid-template-columns: 52px repeat(7, 1fr);
-  border-bottom: 2px solid var(--border);
+  border-bottom: 1px solid var(--border);
   min-height: 28px;
+}
+
+.week-grid__tasks-row {
+  border-bottom: 2px solid var(--border);
+  min-height: 22px;
 }
 
 .week-grid__allday-cell {
@@ -457,8 +462,7 @@ input, select, textarea, button {
 }
 
 .week-grid__scroll {
-  overflow-y: auto;
-  max-height: 560px;
+  overflow: visible;
 }
 
 .week-grid__body {
@@ -475,7 +479,7 @@ input, select, textarea, button {
 }
 
 .week-grid__hour-label {
-  height: 60px;
+  height: 36px;
   box-sizing: border-box;
   display: flex;
   align-items: flex-start;
@@ -497,9 +501,29 @@ input, select, textarea, button {
 }
 
 .week-grid__hour-cell {
-  height: 60px;
+  height: 36px;
   box-sizing: border-box;
   border-top: 1px solid var(--border);
+}
+
+.week-grid__now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.week-grid__now-dot {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
 .week-grid__event {
@@ -1650,13 +1674,11 @@ button, a {
   .calendar__day { min-height: 74px; }
 
   /* Calendar — week view */
-  .week-grid__scroll { max-height: 620px; }
   .week-grid__day-num { font-size: 16px; width: 28px; height: 28px; }
 }
 
 /* iPad landscape / large tablet (901px – 1100px) */
 @media (min-width: 901px) and (max-width: 1100px) {
-  .week-grid__scroll { max-height: 660px; }
 }
 
 /* ── iPhone 11 Pro and small phones (≤ 480px) ── */
@@ -1681,7 +1703,7 @@ button, a {
   /* Calendar — month view */
   .calendar { padding: 10px 8px; }
   .calendar__header { margin-bottom: 8px; }
-  .calendar__header h2 { font-size: 13px; }
+  .calendar__header h2 { font-size: 12px; flex: 1; min-width: 0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .calendar__header-right { gap: 5px; }
   .calendar__nav-btn { padding: 5px 9px; font-size: 14px; }
   .calendar__view-btn { padding: 4px 8px; font-size: 11px; font-weight: 600; }
@@ -1697,12 +1719,13 @@ button, a {
   .week-grid { margin-top: 10px; }
   .week-grid__header,
   .week-grid__allday-row,
-  .week-grid__body { grid-template-columns: 38px repeat(7, minmax(58px, 1fr)); }
-  .week-grid__scroll { max-height: 400px; }
-  .week-grid__day-header { padding: 6px 2px 4px; gap: 1px; }
-  .week-grid__day-name { font-size: 9px; letter-spacing: 0; }
-  .week-grid__day-num { font-size: 14px; width: 26px; height: 26px; }
-  .week-grid__hour-label { font-size: 9px; padding: 0 4px; }
+  .week-grid__tasks-row,
+  .week-grid__body { grid-template-columns: 30px repeat(7, minmax(0, 1fr)); }
+  .week-grid__scroll { overflow-x: hidden; }
+  .week-grid__day-header { padding: 5px 1px 4px; gap: 1px; }
+  .week-grid__day-name { font-size: 8px; letter-spacing: 0; }
+  .week-grid__day-num { font-size: 12px; width: 22px; height: 22px; }
+  .week-grid__hour-label { font-size: 8px; padding: 0 3px; }
   .week-grid__event-title { font-size: 10px; }
   .week-grid__event-time { font-size: 9px; }
 
@@ -2396,6 +2419,16 @@ button, a {
   opacity: 0.85;
 }
 
+.settings-btn--neutral {
+  background: var(--surface-3);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.settings-btn--neutral:hover:not(:disabled) {
+  opacity: 0.8;
+}
+
 .settings-btn--danger {
   background: var(--failure-bg);
   border: 1px solid var(--failure-border);
@@ -2504,6 +2537,18 @@ button, a {
   border: none;
   border-top: 1px solid var(--border);
   margin: 0;
+}
+
+.settings-danger-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.settings-danger-warning {
+  font-size: 13px;
+  color: var(--failure-text);
 }
 
 .settings-hint {

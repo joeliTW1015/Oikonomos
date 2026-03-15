@@ -7,6 +7,8 @@ import {
   getGoogleStatus,
   disconnectGoogle,
   triggerSync,
+  cleanupGoogleEvents,
+  deleteAllEvents,
 } from "../api/settingsClient";
 
 export default function SettingsPage() {
@@ -19,6 +21,8 @@ export default function SettingsPage() {
   const [syncResult, setSyncResult] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [deleteEventsConfirm, setDeleteEventsConfirm] = useState(0); // 0 = idle, 1 = first confirm, 2 = deleting
+
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -99,6 +103,9 @@ export default function SettingsPage() {
     try {
       await saveSetting(key, newValue);
       setSettings((prev) => ({ ...prev, [key]: newValue }));
+      if (key === "google_sync_events" && newValue === "0") {
+        await cleanupGoogleEvents();
+      }
     } catch (err) {
       setError(err.message || "Failed to save setting.");
     }
@@ -209,7 +216,7 @@ export default function SettingsPage() {
               <label className="settings-toggle">
                 <span className="settings-toggle__label">
                   <span>Sync events</span>
-                  <span className="settings-toggle__sub">Create/update/delete events in Google Calendar</span>
+                  <span className="settings-toggle__sub">Import events from Google Calendar (read-only — Oikonomos will not modify Google)</span>
                 </span>
                 <button
                   className={`settings-toggle__btn ${syncEvents ? "settings-toggle__btn--on" : ""}`}
@@ -272,6 +279,51 @@ export default function SettingsPage() {
             </button>
           </>
         )}
+      </section>
+
+      <section className="settings-section">
+        <div className="settings-section__header">
+          <span className="settings-section__title">Danger Zone</span>
+        </div>
+        <div className="settings-danger-row">
+          {deleteEventsConfirm === 0 && (
+            <button
+              className="settings-btn settings-btn--danger"
+              onClick={() => setDeleteEventsConfirm(1)}
+            >
+              Delete All Events
+            </button>
+          )}
+          {deleteEventsConfirm === 1 && (
+            <>
+              <span className="settings-danger-warning">This will permanently delete every event. Are you sure?</span>
+              <button
+                className="settings-btn settings-btn--danger"
+                onClick={async () => {
+                  setDeleteEventsConfirm(2);
+                  try {
+                    await deleteAllEvents();
+                  } catch (err) {
+                    setError(err.message || "Failed to delete events.");
+                  } finally {
+                    setDeleteEventsConfirm(0);
+                  }
+                }}
+              >
+                Yes, delete all events
+              </button>
+              <button
+                className="settings-btn settings-btn--neutral"
+                onClick={() => setDeleteEventsConfirm(0)}
+              >
+                Cancel
+              </button>
+            </>
+          )}
+          {deleteEventsConfirm === 2 && (
+            <span className="settings-danger-warning">Deleting…</span>
+          )}
+        </div>
       </section>
     </div>
   );

@@ -167,6 +167,11 @@ async function pullFromGoogle() {
                 "INSERT INTO events (title, date, time, description, google_event_id, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
                 [fields.title, fields.date, fields.time, fields.description, gEvent.id]
               );
+              const newRow = await get("SELECT last_insert_rowid() AS id");
+              const newId = newRow.id;
+              await run("INSERT OR IGNORE INTO tags (name) VALUES (?)", ["from google calendar"]);
+              const tagRow = await get("SELECT id FROM tags WHERE name = ?", ["from google calendar"]);
+              await run("INSERT OR IGNORE INTO event_tags (event_id, tag_id) VALUES (?, ?)", [newId, tagRow.id]);
               pulled++;
             }
           }
@@ -188,19 +193,6 @@ async function pullFromGoogle() {
       }
     }
 
-    // Push local events with no google_event_id (created while offline)
-    const unpushed = await all(
-      "SELECT * FROM events WHERE google_event_id IS NULL AND date >= ? AND date <= ?",
-      [windowStart.toISOString().slice(0, 10), windowEnd.toISOString().slice(0, 10)]
-    );
-    for (const ev of unpushed) {
-      try {
-        await pushEventToGoogle(ev);
-        pushed++;
-      } catch (err) {
-        errors.push({ type: "push_event", id: ev.id, error: err.message });
-      }
-    }
   }
 
   // --- Reconcile tasks ---
@@ -259,11 +251,23 @@ async function pullFromGoogle() {
   return { pushed, pulled, deleted, errors };
 }
 
+async function deleteGoogleSourcedEvents() {
+  await run(`
+    DELETE FROM events WHERE id IN (
+      SELECT e.id FROM events e
+      JOIN event_tags et ON et.event_id = e.id
+      JOIN tags t ON t.id = et.tag_id
+      WHERE t.name = 'from google calendar'
+    )
+  `);
+}
+
 module.exports = {
   pushEventToGoogle,
   pushTaskToGoogle,
   deleteFromGoogle,
   pullFromGoogle,
+  deleteGoogleSourcedEvents,
   isTaskSyncEnabled,
   isEventSyncEnabled,
 };

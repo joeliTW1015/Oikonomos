@@ -1,4 +1,7 @@
 import React, { useMemo, useState } from "react";
+import { parseTags } from "../state/tasks.js";
+
+function tagsToString(tags) { return (tags || []).join(", "); }
 
 const HOURS = ["1","2","3","4","5","6","7","8","9","10","11","12"];
 
@@ -125,10 +128,13 @@ export default function DayEvents({ date, events, onAdd, onUpdate, onDelete }) {
   const [description, setDescription] = useState("");
   const [timePicker, setTimePicker] = useState(DEFAULT_TIME);
 
+  const [tagsInput, setTagsInput] = useState("");
+
   const [editId, setEditId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editTimePicker, setEditTimePicker] = useState(DEFAULT_TIME);
+  const [editTagsInput, setEditTagsInput] = useState("");
 
   const sortedEvents = useMemo(() => {
     return [...events].sort((a, b) => toSortMinutes(a.time) - toSortMinutes(b.time));
@@ -137,10 +143,11 @@ export default function DayEvents({ date, events, onAdd, onUpdate, onDelete }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onAdd({ title: title.trim(), description: description.trim() || null, date, time: buildTimeString(timePicker) });
+    onAdd({ title: title.trim(), description: description.trim() || null, date, time: buildTimeString(timePicker), tags: parseTags(tagsInput) });
     setTitle("");
     setDescription("");
     setTimePicker(DEFAULT_TIME);
+    setTagsInput("");
   };
 
   const beginEdit = (event) => {
@@ -148,13 +155,15 @@ export default function DayEvents({ date, events, onAdd, onUpdate, onDelete }) {
     setEditTitle(event.title);
     setEditDescription(event.description || "");
     setEditTimePicker(parseTimeToPickerState(event.time));
+    setEditTagsInput(tagsToString(event.tags));
   };
 
   const handleEditSave = (event) => {
     onUpdate(event.id, {
       title: editTitle.trim(),
       description: editDescription.trim() || null,
-      time: buildTimeString(editTimePicker)
+      time: buildTimeString(editTimePicker),
+      tags: parseTags(editTagsInput),
     });
     setEditId(null);
   };
@@ -178,6 +187,12 @@ export default function DayEvents({ date, events, onAdd, onUpdate, onDelete }) {
           placeholder="Description (optional)"
         />
         <TimePicker value={timePicker} onChange={setTimePicker} />
+        <input
+          type="text"
+          value={tagsInput}
+          onChange={(e) => setTagsInput(e.target.value)}
+          placeholder="Tags (comma separated)"
+        />
         <button type="submit">Add</button>
       </form>
       <div className="day__list">
@@ -199,6 +214,13 @@ export default function DayEvents({ date, events, onAdd, onUpdate, onDelete }) {
                   placeholder="Description (optional)"
                 />
                 <TimePicker value={editTimePicker} onChange={setEditTimePicker} />
+                <input
+                  className="day__edit"
+                  type="text"
+                  value={editTagsInput}
+                  onChange={(e) => setEditTagsInput(e.target.value)}
+                  placeholder="Tags (comma separated)"
+                />
               </>
             ) : (
               <div className="event-item__body">
@@ -210,6 +232,13 @@ export default function DayEvents({ date, events, onAdd, onUpdate, onDelete }) {
                   {event.description ? (
                     <p className="day__description">{event.description}</p>
                   ) : null}
+                  {(event.tags || []).length > 0 && (
+                    <div className="day__tags">
+                      {event.tags.map((tag) => (
+                        <span key={tag} className="day__tag">{tag}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

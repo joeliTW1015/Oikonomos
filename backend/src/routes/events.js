@@ -2,8 +2,34 @@ const express = require("express");
 const router = express.Router();
 const { run, all, get } = require("../db");
 
+function normalizeTags(tags) {
+  if (!Array.isArray(tags)) return [];
+  return Array.from(new Set(
+    tags.map((t) => String(t).trim()).filter((t) => t.length > 0)
+  ));
+}
+
+async function ensureTags(tagNames) {
+  const names = normalizeTags(tagNames);
+  const tagIds = [];
+  for (const name of names) {
+    await run("INSERT OR IGNORE INTO tags (name) VALUES (?)", [name]);
+    const row = await get("SELECT id FROM tags WHERE name = ?", [name]);
+    if (row?.id) tagIds.push(row.id);
+  }
+  return tagIds;
+}
+
 function rowToEvent(r) {
-  return { id: r.id, date: r.date, title: r.title, description: r.description || null, time: r.time || null };
+  return {
+    id: r.id,
+    date: r.date,
+    title: r.title,
+    description: r.description || null,
+    time: r.time || null,
+    google_event_id: r.google_event_id || null,
+    tags: r.tags ? r.tags.split("|") : [],
+  };
 }
 
 router.get("/", async (req, res, next) => {
@@ -19,7 +45,14 @@ router.get("/", async (req, res, next) => {
 
     if (date) {
       rows = await all(
-        "SELECT id, date, title, description, time FROM events WHERE date = ? ORDER BY time, id",
+        `SELECT e.id, e.date, e.title, e.description, e.time, e.google_event_id,
+          GROUP_CONCAT(tags.name, '|') AS tags
+        FROM events e
+        LEFT JOIN event_tags et ON et.event_id = e.id
+        LEFT JOIN tags ON tags.id = et.tag_id
+        WHERE e.date = ?
+        GROUP BY e.id
+        ORDER BY e.time ASC`,
         [date]
       );
     } else {
@@ -38,7 +71,14 @@ router.get("/", async (req, res, next) => {
       const endStr = end.toISOString().slice(0, 10);
 
       rows = await all(
-        "SELECT id, date, title, description, time FROM events WHERE date >= ? AND date < ? ORDER BY date, time, id",
+        `SELECT e.id, e.date, e.title, e.description, e.time, e.google_event_id,
+          GROUP_CONCAT(tags.name, '|') AS tags
+        FROM events e
+        LEFT JOIN event_tags et ON et.event_id = e.id
+        LEFT JOIN tags ON tags.id = et.tag_id
+        WHERE e.date >= ? AND e.date < ?
+        GROUP BY e.id
+        ORDER BY e.date, e.time, e.id`,
         [startStr, endStr]
       );
     }
@@ -59,11 +99,25 @@ router.post("/", async (req, res, next) => {
     }
 
     const result = await run(
-      "INSERT INTO events (title, date, description, time) VALUES (?, ?, ?, ?)",
+      "INSERT INTO events (title, date, description, time, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)",
       [String(title).trim(), String(date), description ? String(description).trim() : null, time ? String(time).trim() : null]
     );
 
-    const row = await get("SELECT id, date, title, description, time FROM events WHERE id = ?", [result.lastID]);
+    const tagIds = await ensureTags(req.body.tags || []);
+    for (const tagId of tagIds) {
+      await run("INSERT OR IGNORE INTO event_tags (event_id, tag_id) VALUES (?, ?)", [result.lastID, tagId]);
+    }
+
+    const row = await get(
+      `SELECT e.id, e.date, e.title, e.description, e.time, e.google_event_id,
+        GROUP_CONCAT(tags.name, '|') AS tags
+      FROM events e
+      LEFT JOIN event_tags et ON et.event_id = e.id
+      LEFT JOIN tags ON tags.id = et.tag_id
+      WHERE e.id = ?
+      GROUP BY e.id`,
+      [result.lastID]
+    );
     res.status(201).json(rowToEvent(row));
   } catch (err) {
     next(err);
@@ -93,12 +147,38 @@ router.put("/:id", async (req, res, next) => {
     }
 
     await run(
-      "UPDATE events SET title = ?, description = ?, time = ? WHERE id = ?",
+      "UPDATE events SET title = ?, description = ?, time = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
       [String(title).trim(), description ? String(description).trim() : null, time ? String(time).trim() : null, eventId]
     );
 
-    const row = await get("SELECT id, date, title, description, time FROM events WHERE id = ?", [eventId]);
+    if (Array.isArray(req.body.tags)) {
+      await run("DELETE FROM event_tags WHERE event_id = ?", [eventId]);
+      const tagIds = await ensureTags(req.body.tags);
+      for (const tagId of tagIds) {
+        await run("INSERT OR IGNORE INTO event_tags (event_id, tag_id) VALUES (?, ?)", [eventId, tagId]);
+      }
+    }
+
+    const row = await get(
+      `SELECT e.id, e.date, e.title, e.description, e.time, e.google_event_id,
+        GROUP_CONCAT(tags.name, '|') AS tags
+      FROM events e
+      LEFT JOIN event_tags et ON et.event_id = e.id
+      LEFT JOIN tags ON tags.id = et.tag_id
+      WHERE e.id = ?
+      GROUP BY e.id`,
+      [eventId]
+    );
     res.json(rowToEvent(row));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/all", async (req, res, next) => {
+  try {
+    await run("DELETE FROM events");
+    res.status(204).end();
   } catch (err) {
     next(err);
   }

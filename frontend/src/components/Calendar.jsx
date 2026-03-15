@@ -1,4 +1,5 @@
 import React from "react";
+import WeekGrid from "./WeekGrid.jsx";
 
 function formatDate(date) {
   const year = date.getFullYear();
@@ -24,6 +25,22 @@ function buildCalendarDays(monthDate) {
   return days;
 }
 
+function buildWeekDays(selectedDate) {
+  const d = new Date(selectedDate + "T00:00:00");
+  const sunday = new Date(d);
+  sunday.setDate(d.getDate() - d.getDay());
+  return Array.from({ length: 7 }, (_, i) => {
+    const day = new Date(sunday);
+    day.setDate(sunday.getDate() + i);
+    return day;
+  });
+}
+
+function formatWeekRange(days) {
+  const fmt = (d) => d.toLocaleString("default", { month: "short", day: "numeric" });
+  return `${fmt(days[0])} \u2013 ${fmt(days[6])}, ${days[6].getFullYear()}`;
+}
+
 const TODAY = formatDate(new Date());
 
 export default function Calendar({
@@ -33,66 +50,98 @@ export default function Calendar({
   selectedDate,
   onSelectDate,
   onPrevMonth,
-  onNextMonth
+  onNextMonth,
+  view,
+  onViewChange,
+  onPrevWeek,
+  onNextWeek,
 }) {
-  const days = buildCalendarDays(monthDate);
+  const isWeek = view === "week";
   const month = monthDate.getMonth();
+  const days = isWeek ? buildWeekDays(selectedDate) : buildCalendarDays(monthDate);
+  const headerTitle = isWeek
+    ? formatWeekRange(days)
+    : `${monthDate.toLocaleString("default", { month: "long" })} ${monthDate.getFullYear()}`;
+  const handlePrev = isWeek ? onPrevWeek : onPrevMonth;
+  const handleNext = isWeek ? onNextWeek : onNextMonth;
 
   return (
     <section className="calendar">
       <header className="calendar__header">
-        <button type="button" onClick={onPrevMonth}>&#8592;</button>
-        <h2>
-          {monthDate.toLocaleString("default", { month: "long" })}{" "}
-          {monthDate.getFullYear()}
-        </h2>
-        <button type="button" onClick={onNextMonth}>&#8594;</button>
-      </header>
-      <div className="calendar__weekdays">
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label) => (
-          <div key={label} className="calendar__weekday">
-            {label}
-          </div>
-        ))}
-      </div>
-      <div className="calendar__grid">
-        {days.map((day) => {
-          const isoDate = formatDate(day);
-          const isCurrentMonth = day.getMonth() === month;
-          const isSelected = isoDate === selectedDate;
-          const isToday = isoDate === TODAY;
-          const hasTasks = (tasksByDate[isoDate] || []).length > 0;
-          const dayEvents = (eventsByDate || {})[isoDate] || [];
-          const visibleEvents = dayEvents.slice(0, 2);
-
-          return (
+        <button type="button" className="calendar__nav-btn" onClick={handlePrev}>&#8592;</button>
+        <h2>{headerTitle}</h2>
+        <div className="calendar__header-right">
+          <div className="calendar__view-toggle">
             <button
-              key={isoDate}
               type="button"
-              className={
-                "calendar__day" +
-                (isCurrentMonth ? "" : " calendar__day--muted") +
-                (isSelected ? " calendar__day--selected" : "") +
-                (isToday ? " calendar__day--today" : "")
-              }
-              onClick={() => onSelectDate(isoDate)}
+              className={`calendar__view-btn${!isWeek ? " calendar__view-btn--active" : ""}`}
+              onClick={() => onViewChange("month")}
             >
-              <span className="calendar__day-number">{day.getDate()}</span>
-              <span className="calendar__day-body">
-                {visibleEvents.map((event) => (
-                  <span key={event.id} className="calendar__event-chip">
-                    {event.time ? (
-                      <span className="calendar__event-time">{event.time} </span>
-                    ) : null}
-                    {event.title}
-                  </span>
-                ))}
-              </span>
-              {hasTasks ? <span className="calendar__dot" /> : null}
+              Month
             </button>
-          );
-        })}
-      </div>
+            <button
+              type="button"
+              className={`calendar__view-btn${isWeek ? " calendar__view-btn--active" : ""}`}
+              onClick={() => onViewChange("week")}
+            >
+              Week
+            </button>
+          </div>
+          <button type="button" className="calendar__nav-btn" onClick={handleNext}>&#8594;</button>
+        </div>
+      </header>
+      {isWeek ? (
+        <WeekGrid
+          days={days}
+          eventsByDate={eventsByDate}
+          tasksByDate={tasksByDate}
+          selectedDate={selectedDate}
+          onSelectDate={onSelectDate}
+        />
+      ) : (
+        <>
+          <div className="calendar__weekdays">
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label) => (
+              <div key={label} className="calendar__weekday">
+                {label}
+              </div>
+            ))}
+          </div>
+          <div className="calendar__grid">
+            {days.map((day) => {
+              const isoDate = formatDate(day);
+              const isCurrentMonth = day.getMonth() === month;
+              const isSelected = isoDate === selectedDate;
+              const isToday = isoDate === TODAY;
+              const dayTasks = tasksByDate[isoDate] || [];
+
+              return (
+                <button
+                  key={isoDate}
+                  type="button"
+                  className={
+                    "calendar__day" +
+                    (isCurrentMonth ? "" : " calendar__day--muted") +
+                    (isSelected ? " calendar__day--selected" : "") +
+                    (isToday ? " calendar__day--today" : "")
+                  }
+                  onClick={() => onSelectDate(isoDate)}
+                >
+                  <span className="calendar__day-number">{day.getDate()}</span>
+                  <span className="calendar__day-body">
+                    {dayTasks.map((task) => (
+                      <span
+                        key={task.id}
+                        className={`calendar__task-dot calendar__task-dot--${task.status}`}
+                      />
+                    ))}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
     </section>
   );
 }

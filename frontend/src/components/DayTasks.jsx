@@ -36,6 +36,7 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
 
   // { id, type: 'success'|'failure'|'postponed', note, postponeDate }
   const [statusAction, setStatusAction] = useState(null);
+  const [confirming, setConfirming] = useState(false);
 
   const [historyTaskId, setHistoryTaskId] = useState(null);
   const [history, setHistory] = useState([]);
@@ -143,7 +144,10 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
   const tomorrow = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
-    return d.toISOString().slice(0, 10);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
   }, []);
 
   // ── Add form ──────────────────────────────────────────────────
@@ -182,14 +186,19 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
     setStatusAction({ id: task.id, type, note: "", postponeDate: tomorrow });
   };
 
-  const confirmStatus = () => {
+  const confirmStatus = async () => {
     const { id, type, note, postponeDate } = statusAction;
-    onUpdate(id, {
-      status: type,
-      note: note.trim() || null,
-      ...(type === "postponed" ? { postponeDate } : {})
-    });
-    setStatusAction(null);
+    setConfirming(true);
+    try {
+      await onUpdate(id, {
+        status: type,
+        note: note.trim() || null,
+        ...(type === "postponed" ? { postponeDate } : {})
+      });
+      setStatusAction(null);
+    } finally {
+      setConfirming(false);
+    }
   };
 
   // ── History ───────────────────────────────────────────────────
@@ -330,7 +339,7 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
                     type="button"
                     className={`btn-confirm btn-confirm--${statusAction.type}`}
                     onClick={confirmStatus}
-                    disabled={statusAction.type === "postponed" && !statusAction.postponeDate}
+                    disabled={confirming || (statusAction.type === "postponed" && !statusAction.postponeDate)}
                   >
                     Confirm
                   </button>

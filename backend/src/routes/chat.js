@@ -1,6 +1,6 @@
 const express = require("express");
 const { all } = require("../db");
-const { MODEL, SYSTEM_PROMPT, TOOLS, buildContextBlock } = require("../prompts");
+const { MODEL, TOOLS, buildContextBlock, getEffectivePrompts } = require("../prompts");
 
 const router = express.Router();
 
@@ -45,7 +45,8 @@ router.post("/", async (req, res) => {
     ]);
 
     const contextBlock = buildContextBlock({ tasks, events, goals, shoppingItems, longTermTodos }, today);
-    const systemContent = `${SYSTEM_PROMPT}\n\n${contextBlock}`;
+    const { chatSystemPrompt } = await getEffectivePrompts();
+    const systemContent = `${chatSystemPrompt}\n\n${contextBlock}`;
 
     const ollamaBody = {
       model: MODEL,

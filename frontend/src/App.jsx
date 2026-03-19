@@ -259,7 +259,7 @@ export default function App() {
         )}
 
         {activePage === "chat" && <ChatPage selectedDate={selectedDate} onRefresh={handleRefresh} />}
-        {activePage === "summary" && <SummaryPage />}
+        {activePage === "summary" && <SummaryPage date={selectedDate} tasks={tasks} events={events} />}
         {activePage === "settings" && <SettingsPage />}
       </div>
 

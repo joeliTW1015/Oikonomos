@@ -49,3 +49,11 @@ export async function cleanupGoogleEvents() {
 export async function deleteAllEvents() {
   return request("/events/all", { method: "DELETE" });
 }
+
+export async function analyseEmails() {
+  return request("/email/analyse", { method: "POST" });
+}
+
+export async function testEmailConnection() {
+  return request("/email/test-connection", { method: "POST" });
+}

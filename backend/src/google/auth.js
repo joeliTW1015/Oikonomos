@@ -2,7 +2,10 @@ const { google } = require("googleapis");
 const { run, get } = require("../db");
 
 const REDIRECT_URI = "http://localhost:3001/api/auth/google/callback";
-const SCOPES = ["https://www.googleapis.com/auth/calendar.events"];
+const SCOPES = [
+  "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/gmail.readonly",
+];
 
 async function getSetting(key) {
   const row = await get("SELECT value FROM settings WHERE key = ?", [key]);

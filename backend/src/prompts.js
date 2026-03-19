@@ -1,3 +1,5 @@
+const { get } = require("./db");
+
 const MODEL = "qwen2.5:14b";
 
 const SYSTEM_PROMPT = `You are Oikonomos AI, a helpful personal assistant integrated into the Oikonomos planner app. You have access to the user's current tasks, events, goals, shopping list, and long-term todos. Answer questions concisely and helpfully. When listing items, be brief. If asked about something not in the context, say so honestly. Do not make up data. However you can use the data to infer helpful insights, e.g. "You have a busy week ahead with 3 events and 5 tasks, so make sure to plan accordingly!" or "You have 2 overdue tasks, consider prioritizing those." Always be supportive and encouraging!. If the user input in Chinese, respond in Taiwan Traditional Chinese. When the user asks to add, create, schedule, buy, or plan something, use the appropriate tool(s). One message may require multiple tool calls. You may infer a sensible date from context (default to today if unclear). Always use tools for creation — never just say "I've added it".`;
@@ -155,4 +157,16 @@ function buildContextBlock(data, date) {
   return lines.join("\n");
 }
 
-module.exports = { MODEL, SYSTEM_PROMPT, TOOLS, buildContextBlock };
+const DEFAULT_EMAIL_SUMMARY_PROMPT = `You are a personal assistant. Review the following emails and provide a concise daily briefing. Focus on: urgent items requiring action, important deadlines, and key information I should know today. Be brief and structured. Group by priority.`;
+
+async function getEffectivePrompts() {
+  async function getSetting(key) {
+    const row = await get("SELECT value FROM settings WHERE key = ?", [key]);
+    return row ? row.value : null;
+  }
+  const chatSystemPrompt = (await getSetting("prompt_chat_system")) || SYSTEM_PROMPT;
+  const emailSummaryPrompt = (await getSetting("prompt_email_summary")) || DEFAULT_EMAIL_SUMMARY_PROMPT;
+  return { chatSystemPrompt, emailSummaryPrompt };
+}
+
+module.exports = { MODEL, SYSTEM_PROMPT, DEFAULT_EMAIL_SUMMARY_PROMPT, TOOLS, buildContextBlock, getEffectivePrompts };

@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { parseTags } from "../state/tasks.js";
+
+function tagsToString(tags) { return (tags || []).join(", "); }
 
 const HOURS = ["1","2","3","4","5","6","7","8","9","10","11","12"];
-const MINUTES = ["00","15","30","45"];
 
 const DEFAULT_TIME = {
   enabled: false,
@@ -50,8 +52,50 @@ function toSortMinutes(timeStr) {
   return h * 60 + m;
 }
 
+function MinuteInput({ value, onChange }) {
+  const [raw, setRaw] = useState(value);
+  const lastSent = React.useRef(value);
+
+  useEffect(() => {
+    // Only sync raw when value was changed externally (not by our own onChange)
+    if (value !== lastSent.current) {
+      lastSent.current = value;
+      setRaw(value);
+    }
+  }, [value]);
+
+  const handleChange = (e) => {
+    const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2);
+    setRaw(cleaned);
+    const n = parseInt(cleaned, 10);
+    if (cleaned === "" || (n >= 0 && n <= 59)) {
+      const canonical = cleaned === "" ? "00" : String(n).padStart(2, "0");
+      lastSent.current = canonical;
+      onChange(canonical);
+    }
+  };
+
+  const handleBlur = () => {
+    setRaw(value);
+    lastSent.current = value;
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      className="time-picker__minute"
+      value={raw}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      maxLength={2}
+    />
+  );
+}
+
 function TimePicker({ value, onChange }) {
   const set = (key) => (e) => onChange({ ...value, [key]: e.target.value });
+  const setMinute = (key) => (m) => onChange({ ...value, [key]: m });
   const toggle = (key) => () => onChange({ ...value, [key]: !value[key] });
 
   return (
@@ -68,9 +112,7 @@ function TimePicker({ value, onChange }) {
               {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
             </select>
             <span className="time-picker__sep">:</span>
-            <select value={value.startM} onChange={set("startM")}>
-              {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
+            <MinuteInput value={value.startM} onChange={setMinute("startM")} />
             <select value={value.startP} onChange={set("startP")}>
               <option value="AM">AM</option>
               <option value="PM">PM</option>
@@ -89,9 +131,7 @@ function TimePicker({ value, onChange }) {
                 {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
               </select>
               <span className="time-picker__sep">:</span>
-              <select value={value.endM} onChange={set("endM")}>
-                {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
+              <MinuteInput value={value.endM} onChange={setMinute("endM")} />
               <select value={value.endP} onChange={set("endP")}>
                 <option value="AM">AM</option>
                 <option value="PM">PM</option>
@@ -109,10 +149,13 @@ export default function DayEvents({ date, events, onAdd, onUpdate, onDelete }) {
   const [description, setDescription] = useState("");
   const [timePicker, setTimePicker] = useState(DEFAULT_TIME);
 
+  const [tagsInput, setTagsInput] = useState("");
+
   const [editId, setEditId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editTimePicker, setEditTimePicker] = useState(DEFAULT_TIME);
+  const [editTagsInput, setEditTagsInput] = useState("");
 
   const sortedEvents = useMemo(() => {
     return [...events].sort((a, b) => toSortMinutes(a.time) - toSortMinutes(b.time));
@@ -121,10 +164,11 @@ export default function DayEvents({ date, events, onAdd, onUpdate, onDelete }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onAdd({ title: title.trim(), description: description.trim() || null, date, time: buildTimeString(timePicker) });
+    onAdd({ title: title.trim(), description: description.trim() || null, date, time: buildTimeString(timePicker), tags: parseTags(tagsInput) });
     setTitle("");
     setDescription("");
     setTimePicker(DEFAULT_TIME);
+    setTagsInput("");
   };
 
   const beginEdit = (event) => {
@@ -132,13 +176,15 @@ export default function DayEvents({ date, events, onAdd, onUpdate, onDelete }) {
     setEditTitle(event.title);
     setEditDescription(event.description || "");
     setEditTimePicker(parseTimeToPickerState(event.time));
+    setEditTagsInput(tagsToString(event.tags));
   };
 
   const handleEditSave = (event) => {
     onUpdate(event.id, {
       title: editTitle.trim(),
       description: editDescription.trim() || null,
-      time: buildTimeString(editTimePicker)
+      time: buildTimeString(editTimePicker),
+      tags: parseTags(editTagsInput),
     });
     setEditId(null);
   };
@@ -162,6 +208,12 @@ export default function DayEvents({ date, events, onAdd, onUpdate, onDelete }) {
           placeholder="Description (optional)"
         />
         <TimePicker value={timePicker} onChange={setTimePicker} />
+        <input
+          type="text"
+          value={tagsInput}
+          onChange={(e) => setTagsInput(e.target.value)}
+          placeholder="Tags (comma separated)"
+        />
         <button type="submit">Add</button>
       </form>
       <div className="day__list">
@@ -183,6 +235,13 @@ export default function DayEvents({ date, events, onAdd, onUpdate, onDelete }) {
                   placeholder="Description (optional)"
                 />
                 <TimePicker value={editTimePicker} onChange={setEditTimePicker} />
+                <input
+                  className="day__edit"
+                  type="text"
+                  value={editTagsInput}
+                  onChange={(e) => setEditTagsInput(e.target.value)}
+                  placeholder="Tags (comma separated)"
+                />
               </>
             ) : (
               <div className="event-item__body">
@@ -194,6 +253,13 @@ export default function DayEvents({ date, events, onAdd, onUpdate, onDelete }) {
                   {event.description ? (
                     <p className="day__description">{event.description}</p>
                   ) : null}
+                  {(event.tags || []).length > 0 && (
+                    <div className="day__tags">
+                      {event.tags.map((tag) => (
+                        <span key={tag} className="day__tag">{tag}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

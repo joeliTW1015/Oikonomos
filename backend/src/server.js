@@ -10,6 +10,9 @@ const shoppingRouter = require("./routes/shopping");
 const goalsRouter = require("./routes/goals");
 const longTermTodosRouter = require("./routes/longtermtodos");
 const chatRouter = require("./routes/chat");
+const authRouter = require("./routes/auth");
+const settingsRouter = require("./routes/settings");
+const syncRouter = require("./routes/sync");
 
 const app = express();
 
@@ -27,6 +30,9 @@ app.use("/api/shopping", shoppingRouter);
 app.use("/api/goals", goalsRouter);
 app.use("/api/long-term-todos", longTermTodosRouter);
 app.use("/api/chat", chatRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/settings", settingsRouter);
+app.use("/api/sync", syncRouter);
 
 const distPath = path.join(__dirname, "..", "frontend-dist");
 if (fs.existsSync(distPath)) {

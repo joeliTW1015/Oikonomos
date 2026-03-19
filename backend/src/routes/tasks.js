@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { run, all, get } = require("../db");
+const { pushTaskToGoogle, deleteFromGoogle } = require("../google/sync");
 
 function normalizeTags(tags) {
   if (!Array.isArray(tags)) return [];
@@ -32,13 +33,14 @@ function rowsToTasks(rows) {
     originTaskId: row.origin_task_id || null,
     postponeCount: row.postpone_count || 0,
     position: row.position != null ? row.position : row.id,
-    tags: row.tags ? row.tags.split("|") : []
+    tags: row.tags ? row.tags.split("|") : [],
+    google_event_id: row.google_event_id || null,
   }));
 }
 
 const BASE_SELECT =
   "SELECT t.id, t.title, t.description, t.date, t.status, t.note, " +
-  "t.postpone_date, t.origin_task_id, t.postpone_count, t.position, " +
+  "t.postpone_date, t.origin_task_id, t.postpone_count, t.position, t.google_event_id, " +
   "GROUP_CONCAT(tags.name, '|') AS tags " +
   "FROM tasks t " +
   "LEFT JOIN task_tags tt ON tt.task_id = t.id " +
@@ -159,7 +161,11 @@ router.post("/", async (req, res, next) => {
       await run("INSERT OR IGNORE INTO task_tags (task_id, tag_id) VALUES (?, ?)", [result.lastID, tagId]);
     }
 
-    res.status(201).json(await fetchTaskById(result.lastID));
+    const created = await fetchTaskById(result.lastID);
+    res.status(201).json(created);
+
+    // Auto-push to Google (fire-and-forget)
+    pushTaskToGoogle(created).catch((e) => console.warn("Google task sync push failed:", e.message));
   } catch (err) {
     next(err);
   }
@@ -233,7 +239,14 @@ router.put("/:id", async (req, res, next) => {
       newTask = await fetchTaskById(result.lastID);
     }
 
-    res.json({ task: await fetchTaskById(taskId), newTask });
+    const updatedTask = await fetchTaskById(taskId);
+    res.json({ task: updatedTask, newTask });
+
+    // Auto-push to Google (fire-and-forget)
+    pushTaskToGoogle(updatedTask).catch((e) => console.warn("Google task sync push failed:", e.message));
+    if (newTask) {
+      pushTaskToGoogle(newTask).catch((e) => console.warn("Google task sync push failed:", e.message));
+    }
   } catch (err) {
     next(err);
   }
@@ -247,9 +260,17 @@ router.delete("/:id", async (req, res, next) => {
       res.status(400).json({ error: "invalid task id" });
       return;
     }
+    const existing = await get("SELECT google_event_id FROM tasks WHERE id = ?", [taskId]);
     await run("DELETE FROM task_tags WHERE task_id = ?", [taskId]);
     await run("DELETE FROM tasks WHERE id = ?", [taskId]);
     res.status(204).end();
+
+    // Auto-delete from Google (fire-and-forget)
+    if (existing?.google_event_id) {
+      deleteFromGoogle(existing.google_event_id).catch((e) =>
+        console.warn("Google task sync delete failed:", e.message)
+      );
+    }
   } catch (err) {
     next(err);
   }

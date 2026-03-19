@@ -21,6 +21,13 @@ db.run("ALTER TABLE tasks ADD COLUMN origin_task_id INTEGER", () => {});
 db.run("ALTER TABLE tasks ADD COLUMN postpone_count INTEGER NOT NULL DEFAULT 0", () => {});
 db.run("ALTER TABLE tasks ADD COLUMN position INTEGER", () => {});
 db.run("ALTER TABLE events ADD COLUMN description TEXT", () => {});
+db.run("ALTER TABLE events ADD COLUMN google_event_id TEXT", () => {});
+db.run("ALTER TABLE events ADD COLUMN updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP", () => {});
+db.run("ALTER TABLE tasks ADD COLUMN google_event_id TEXT", () => {});
+db.run("ALTER TABLE tasks ADD COLUMN updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP", () => {});
+// Indexes that depend on google_event_id columns must run after the ALTER TABLE migrations above
+db.run("CREATE INDEX IF NOT EXISTS idx_events_google_id ON events(google_event_id)", () => {});
+db.run("CREATE INDEX IF NOT EXISTS idx_tasks_google_id ON tasks(google_event_id)", () => {});
 // Migrate old completed=1 tasks to status='success'
 db.run("UPDATE tasks SET status='success' WHERE completed=1 AND (status IS NULL OR status='pending')", () => {});
 

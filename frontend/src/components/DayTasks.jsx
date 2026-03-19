@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { CheckCircle2, XCircle, CalendarClock, History, ChevronUp, ChevronDown, RotateCcw } from "lucide-react";
+import React, { useMemo, useState, useRef } from "react";
+import { CheckCircle2, XCircle, CalendarClock, History, GripVertical, RotateCcw } from "lucide-react";
 import { parseTags } from "../state/tasks.js";
 import { fetchTaskHistory } from "../api/client.js";
 
@@ -36,6 +36,7 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
 
   // { id, type: 'success'|'failure'|'postponed', note, postponeDate }
   const [statusAction, setStatusAction] = useState(null);
+  const [confirming, setConfirming] = useState(false);
 
   const [historyTaskId, setHistoryTaskId] = useState(null);
   const [history, setHistory] = useState([]);
@@ -56,13 +57,84 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
     [pendingTasks, resolvedTasks]
   );
 
-  // Move within pending group only; pass pending IDs to onReorder
-  const move = (pendingIndex, direction) => {
+  const dragIndexRef = useRef(null);
+  const dropIndexRef = useRef(null);
+  const scrollRafRef = useRef(null);
+  const [dropTarget, setDropTarget] = useState(null);
+
+  const stopAutoScroll = () => {
+    if (scrollRafRef.current) {
+      cancelAnimationFrame(scrollRafRef.current);
+      scrollRafRef.current = null;
+    }
+  };
+
+  const startAutoScroll = (clientY) => {
+    const container = document.querySelector(".page-content");
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const ZONE = 80;
+    const MAX_SPEED = 10;
+    let speed = 0;
+    if (clientY < rect.top + ZONE) {
+      speed = -MAX_SPEED * (1 - (clientY - rect.top) / ZONE);
+    } else if (clientY > rect.bottom - ZONE) {
+      speed = MAX_SPEED * (1 - (rect.bottom - clientY) / ZONE);
+    }
+    stopAutoScroll();
+    if (speed !== 0) {
+      const tick = () => {
+        container.scrollBy(0, speed);
+        scrollRafRef.current = requestAnimationFrame(tick);
+      };
+      scrollRafRef.current = requestAnimationFrame(tick);
+    }
+  };
+
+  // NOTE: HTML5 DnD does not work on iOS Safari / Android touch.
+  const handleDragStart = (e, pendingIdx) => {
+    dragIndexRef.current = pendingIdx;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(pendingIdx)); // required for Firefox
+  };
+
+  const handleDragOver = (e, pendingIdx) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    startAutoScroll(e.clientY);
+    if (dropIndexRef.current !== pendingIdx) {
+      dropIndexRef.current = pendingIdx;
+      setDropTarget(pendingIdx);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      dropIndexRef.current = null;
+      setDropTarget(null);
+    }
+  };
+
+  const handleDrop = (e, pendingIdx) => {
+    e.preventDefault();
+    stopAutoScroll();
+    const from = dragIndexRef.current;
+    const to = pendingIdx;
+    dragIndexRef.current = null;
+    dropIndexRef.current = null;
+    setDropTarget(null);
+    if (from === null || from === to) return;
     const next = [...pendingTasks];
-    const swapIndex = pendingIndex + direction;
-    if (swapIndex < 0 || swapIndex >= next.length) return;
-    [next[pendingIndex], next[swapIndex]] = [next[swapIndex], next[pendingIndex]];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
     onReorder(next.map((t) => t.id));
+  };
+
+  const handleDragEnd = () => {
+    stopAutoScroll();
+    dragIndexRef.current = null;
+    dropIndexRef.current = null;
+    setDropTarget(null);
   };
 
   const handleRestore = (task) => {
@@ -72,7 +144,10 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
   const tomorrow = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
-    return d.toISOString().slice(0, 10);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
   }, []);
 
   // ── Add form ──────────────────────────────────────────────────
@@ -111,14 +186,19 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
     setStatusAction({ id: task.id, type, note: "", postponeDate: tomorrow });
   };
 
-  const confirmStatus = () => {
+  const confirmStatus = async () => {
     const { id, type, note, postponeDate } = statusAction;
-    onUpdate(id, {
-      status: type,
-      note: note.trim() || null,
-      ...(type === "postponed" ? { postponeDate } : {})
-    });
-    setStatusAction(null);
+    setConfirming(true);
+    try {
+      await onUpdate(id, {
+        status: type,
+        note: note.trim() || null,
+        ...(type === "postponed" ? { postponeDate } : {})
+      });
+      setStatusAction(null);
+    } finally {
+      setConfirming(false);
+    }
   };
 
   // ── History ───────────────────────────────────────────────────
@@ -153,13 +233,33 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
       </form>
 
       <div className="day__list">
-        {sortedTasks.map((task, index) => (
+        {sortedTasks.map((task) => {
+          const isPending = task.status === "pending";
+          const pendingIdx = isPending ? pendingTasks.indexOf(task) : -1;
+          const isDragOver = isPending && dropTarget === pendingIdx;
+
+          return (
           <div
             key={task.id}
-            className={"day__item" + (task.status !== "pending" ? " day__item--resolved" : "")}
+            className={[
+              "day__item",
+              !isPending ? "day__item--resolved" : "",
+              isDragOver ? "day__item--drop-target" : "",
+            ].filter(Boolean).join(" ")}
+            draggable={isPending}
+            onDragStart={isPending ? (e) => handleDragStart(e, pendingIdx) : undefined}
+            onDragOver={isPending ? (e) => handleDragOver(e, pendingIdx) : undefined}
+            onDragLeave={isPending ? handleDragLeave : undefined}
+            onDrop={isPending ? (e) => handleDrop(e, pendingIdx) : undefined}
+            onDragEnd={isPending ? handleDragEnd : undefined}
           >
             {/* Title row */}
             <div className="day__item-header">
+              {isPending && (
+                <span className="day__drag-handle" aria-hidden="true">
+                  <GripVertical size={16} />
+                </span>
+              )}
               <StatusBadge status={task.status} />
               {editId === task.id ? (
                 <input
@@ -239,7 +339,7 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
                     type="button"
                     className={`btn-confirm btn-confirm--${statusAction.type}`}
                     onClick={confirmStatus}
-                    disabled={statusAction.type === "postponed" && !statusAction.postponeDate}
+                    disabled={confirming || (statusAction.type === "postponed" && !statusAction.postponeDate)}
                   >
                     Confirm
                   </button>
@@ -274,28 +374,6 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
 
             {/* Actions */}
             <div className="day__actions">
-              {task.status === "pending" && pendingTasks.length > 1 && editId !== task.id && statusAction?.id !== task.id ? (
-                <>
-                  <button
-                    type="button"
-                    className="btn-icon"
-                    title="Move up"
-                    disabled={index === 0}
-                    onClick={() => move(index, -1)}
-                  >
-                    <ChevronUp size={15} />
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-icon"
-                    title="Move down"
-                    disabled={index === pendingTasks.length - 1}
-                    onClick={() => move(index, 1)}
-                  >
-                    <ChevronDown size={15} />
-                  </button>
-                </>
-              ) : null}
               {task.status !== "pending" && editId !== task.id ? (
                 <button
                   type="button"
@@ -343,7 +421,8 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
               <button type="button" onClick={() => onDelete(task.id)}>Delete</button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

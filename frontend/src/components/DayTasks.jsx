@@ -141,14 +141,11 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
     onUpdate(task.id, { status: "pending", note: null });
   };
 
-  const tomorrow = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  }, []);
+  const dayPlusOne = useMemo(() => {
+    const [y, m, d] = date.split("-").map(Number);
+    const next = new Date(y, m - 1, d + 1);
+    return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-${String(next.getDate()).padStart(2, "0")}`;
+  }, [date]);
 
   // ── Add form ──────────────────────────────────────────────────
   const handleSubmit = (e) => {
@@ -183,7 +180,7 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
   const openStatusAction = (task, type) => {
     setEditId(null);
     setHistoryTaskId(null);
-    setStatusAction({ id: task.id, type, note: "", postponeDate: tomorrow });
+    setStatusAction({ id: task.id, type, note: "", postponeDate: dayPlusOne });
   };
 
   const confirmStatus = async () => {
@@ -328,7 +325,7 @@ export default function DayTasks({ date, tasks, onAdd, onUpdate, onDelete, onReo
                     <label>Reschedule to:</label>
                     <input
                       type="date"
-                      min={tomorrow}
+                      min={dayPlusOne}
                       value={statusAction.postponeDate}
                       onChange={(e) => setStatusAction((s) => ({ ...s, postponeDate: e.target.value }))}
                     />

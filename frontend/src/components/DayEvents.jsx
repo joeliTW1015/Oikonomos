@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { parseTags } from "../state/tasks.js";
 
 function tagsToString(tags) { return (tags || []).join(", "); }
@@ -53,20 +53,41 @@ function toSortMinutes(timeStr) {
 }
 
 function MinuteInput({ value, onChange }) {
+  const [raw, setRaw] = useState(value);
+  const lastSent = React.useRef(value);
+
+  useEffect(() => {
+    // Only sync raw when value was changed externally (not by our own onChange)
+    if (value !== lastSent.current) {
+      lastSent.current = value;
+      setRaw(value);
+    }
+  }, [value]);
+
   const handleChange = (e) => {
-    const raw = e.target.value.replace(/\D/g, "").slice(0, 2);
-    const n = parseInt(raw, 10);
-    if (raw === "" || (n >= 0 && n <= 59)) {
-      onChange(raw === "" ? "00" : String(n).padStart(2, "0"));
+    const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2);
+    setRaw(cleaned);
+    const n = parseInt(cleaned, 10);
+    if (cleaned === "" || (n >= 0 && n <= 59)) {
+      const canonical = cleaned === "" ? "00" : String(n).padStart(2, "0");
+      lastSent.current = canonical;
+      onChange(canonical);
     }
   };
+
+  const handleBlur = () => {
+    setRaw(value);
+    lastSent.current = value;
+  };
+
   return (
     <input
       type="text"
       inputMode="numeric"
       className="time-picker__minute"
-      value={value}
+      value={raw}
       onChange={handleChange}
+      onBlur={handleBlur}
       maxLength={2}
     />
   );

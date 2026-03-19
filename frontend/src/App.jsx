@@ -234,6 +234,7 @@ export default function App() {
                 {loading ? <p className="app__loading">Loading…</p> : null}
                 {error ? <p className="error">{error}</p> : null}
                 <DayTasks
+                  key={selectedDate}
                   date={selectedDate}
                   tasks={dayTasks}
                   onAdd={handleAdd}

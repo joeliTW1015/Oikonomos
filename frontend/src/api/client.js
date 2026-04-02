@@ -1,23 +1,65 @@
+import { enqueue } from "../offlineQueue.js";
+
 const baseUrl = "/api";
 
+export class OfflineQueuedError extends Error {
+  constructor(method, url) {
+    super(`Offline: ${method} ${url} queued for later sync`);
+    this.name = "OfflineQueuedError";
+    this.queued = true;
+  }
+}
+
+const MUTATIONS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+// These endpoints are interactive/ephemeral and must not be queued
+const NON_QUEUEABLE = ["/api/chat", "/api/email"];
+
 async function request(path, options = {}) {
-  const response = await fetch(`${baseUrl}${path}`, {
-    headers: {
-      "Content-Type": "application/json"
-    },
-    ...options
-  });
+  const method = (options.method || "GET").toUpperCase();
+  const url = `${baseUrl}${path}`;
+  const fullUrl = url;
 
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || "Request failed");
+  const isMutation = MUTATIONS.has(method);
+  const isQueueable = isMutation && !NON_QUEUEABLE.some((prefix) => url.startsWith(prefix));
+
+  // If offline before even attempting — queue mutations immediately
+  if (isQueueable && !navigator.onLine) {
+    const body = options.body ? JSON.parse(options.body) : undefined;
+    enqueue(method, fullUrl, body);
+    throw new OfflineQueuedError(method, fullUrl);
   }
 
-  if (response.status === 204) {
-    return null;
-  }
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json"
+      },
+      ...options
+    });
 
-  return response.json();
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(message || "Request failed");
+    }
+
+    if (response.status === 204) {
+      return null;
+    }
+
+    return response.json();
+  } catch (err) {
+    // Don't re-wrap an already-queued error
+    if (err instanceof OfflineQueuedError) throw err;
+
+    // Network failure mid-flight for a queueable mutation → queue it
+    if (isQueueable && !navigator.onLine) {
+      const body = options.body ? JSON.parse(options.body) : undefined;
+      enqueue(method, fullUrl, body);
+      throw new OfflineQueuedError(method, fullUrl);
+    }
+
+    throw err;
+  }
 }
 
 export async function fetchTasks(month) {

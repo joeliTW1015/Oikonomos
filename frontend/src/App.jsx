@@ -9,9 +9,10 @@ import ChatPage from "./components/ChatPage.jsx";
 import SummaryPage from "./components/SummaryPage.jsx";
 import SettingsPage from "./components/SettingsPage.jsx";
 import NavBar from "./components/NavBar.jsx";
-import { createTask, deleteTask, fetchTasks, updateTask, reorderTasks, fetchEvents, createEvent, updateEvent, deleteEvent } from "./api/client.js";
+import { createTask, deleteTask, fetchTasks, updateTask, reorderTasks, fetchEvents, createEvent, updateEvent, deleteEvent, OfflineQueuedError } from "./api/client.js";
 import { groupTasksByDate, groupEventsByDate } from "./state/tasks.js";
 import { getGoogleStatus, triggerSync } from "./api/settingsClient.js";
+import { flushQueue, getQueue } from "./offlineQueue.js";
 
 function toMonthKey(date) {
   const year = date.getFullYear();
@@ -41,6 +42,8 @@ export default function App() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+  const [pendingCount, setPendingCount] = useState(() => getQueue().length);
 
   const monthKey = useMemo(() => toMonthKey(monthDate), [monthDate]);
   const tasksByDate = useMemo(() => groupTasksByDate(tasks), [tasks]);
@@ -62,6 +65,34 @@ export default function App() {
   // Keep a ref so the interval closure always reads the latest monthKey
   const monthKeyRef = useRef(monthKey);
   useEffect(() => { monthKeyRef.current = monthKey; }, [monthKey]);
+
+  // Online/offline detection and queue flush
+  useEffect(() => {
+    const handleOnline = async () => {
+      setIsOnline(true);
+      // Brief preflight to confirm connectivity before flushing
+      try {
+        await fetch("/health", { method: "HEAD" });
+      } catch {
+        return; // Still unreachable — wait for next online event
+      }
+      const result = await flushQueue();
+      setPendingCount(result.remaining);
+      if (result.flushed > 0) {
+        handleRefresh();
+      }
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-sync from Google Calendar on load and every 5 minutes
   useEffect(() => {
@@ -140,24 +171,51 @@ export default function App() {
   };
 
   const handleAdd = async (payload) => {
-    const created = await createTask(payload);
-    setTasks((prev) => [...prev, created]);
+    try {
+      const created = await createTask(payload);
+      setTasks((prev) => [...prev, created]);
+    } catch (err) {
+      if (err instanceof OfflineQueuedError) {
+        setTasks((prev) => [...prev, { ...payload, id: `temp_${Date.now()}`, _offline: true }]);
+        setPendingCount(getQueue().length);
+      } else {
+        throw err;
+      }
+    }
   };
 
   const handleUpdate = async (id, payload) => {
-    const result = await updateTask(id, payload);
-    const updated = result.task || result;
-    const newTask = result.newTask || null;
-    setTasks((prev) => {
-      const mapped = prev.map((task) => (task.id === id ? updated : task));
-      if (newTask && newTask.date.startsWith(monthKey)) return [...mapped, newTask];
-      return mapped;
-    });
+    try {
+      const result = await updateTask(id, payload);
+      const updated = result.task || result;
+      const newTask = result.newTask || null;
+      setTasks((prev) => {
+        const mapped = prev.map((task) => (task.id === id ? updated : task));
+        if (newTask && newTask.date.startsWith(monthKey)) return [...mapped, newTask];
+        return mapped;
+      });
+    } catch (err) {
+      if (err instanceof OfflineQueuedError) {
+        setTasks((prev) => prev.map((task) => task.id === id ? { ...task, ...payload, _offline: true } : task));
+        setPendingCount(getQueue().length);
+      } else {
+        throw err;
+      }
+    }
   };
 
   const handleDelete = async (id) => {
-    await deleteTask(id);
-    setTasks((prev) => prev.filter((task) => task.id !== id));
+    try {
+      await deleteTask(id);
+      setTasks((prev) => prev.filter((task) => task.id !== id));
+    } catch (err) {
+      if (err instanceof OfflineQueuedError) {
+        setTasks((prev) => prev.filter((task) => task.id !== id));
+        setPendingCount(getQueue().length);
+      } else {
+        throw err;
+      }
+    }
   };
 
   const handleReorder = async (orderedIds) => {
@@ -165,22 +223,57 @@ export default function App() {
       const posMap = new Map(orderedIds.map((id, i) => [id, i]));
       return prev.map((t) => posMap.has(t.id) ? { ...t, position: posMap.get(t.id) } : t);
     });
-    await reorderTasks(orderedIds);
+    try {
+      await reorderTasks(orderedIds);
+    } catch (err) {
+      if (err instanceof OfflineQueuedError) {
+        setPendingCount(getQueue().length);
+      } else {
+        throw err;
+      }
+    }
   };
 
   const handleAddEvent = async (payload) => {
-    const created = await createEvent(payload);
-    setEvents((prev) => [...prev, created]);
+    try {
+      const created = await createEvent(payload);
+      setEvents((prev) => [...prev, created]);
+    } catch (err) {
+      if (err instanceof OfflineQueuedError) {
+        setEvents((prev) => [...prev, { ...payload, id: `temp_${Date.now()}`, _offline: true }]);
+        setPendingCount(getQueue().length);
+      } else {
+        throw err;
+      }
+    }
   };
 
   const handleUpdateEvent = async (id, payload) => {
-    const updated = await updateEvent(id, payload);
-    setEvents((prev) => prev.map((e) => (e.id === id ? updated : e)));
+    try {
+      const updated = await updateEvent(id, payload);
+      setEvents((prev) => prev.map((e) => (e.id === id ? updated : e)));
+    } catch (err) {
+      if (err instanceof OfflineQueuedError) {
+        setEvents((prev) => prev.map((e) => e.id === id ? { ...e, ...payload, _offline: true } : e));
+        setPendingCount(getQueue().length);
+      } else {
+        throw err;
+      }
+    }
   };
 
   const handleDeleteEvent = async (id) => {
-    await deleteEvent(id);
-    setEvents((prev) => prev.filter((e) => e.id !== id));
+    try {
+      await deleteEvent(id);
+      setEvents((prev) => prev.filter((e) => e.id !== id));
+    } catch (err) {
+      if (err instanceof OfflineQueuedError) {
+        setEvents((prev) => prev.filter((e) => e.id !== id));
+        setPendingCount(getQueue().length);
+      } else {
+        throw err;
+      }
+    }
   };
 
   const handleRefresh = () => {
@@ -203,6 +296,12 @@ export default function App() {
 
   return (
     <div className="app">
+      {!isOnline && (
+        <div className="offline-banner">
+          Offline{pendingCount > 0 ? ` — ${pendingCount} change${pendingCount > 1 ? "s" : ""} queued` : ""}
+        </div>
+      )}
+
       <header className="app__header">
         <div className="app__header-brand">
           <h1>Oikonomos</h1>

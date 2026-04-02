@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
     volumes:
       - ./data:/data
     extra_hosts:
@@ -11,4 +11,11 @@ services:
       - DB_PATH=/data/data.sqlite
       - PORT=3001
       - OLLAMA_URL=http://host.docker.internal:11434
+    mem_limit: 512m
+    pids_limit: 100
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/tasks?date=2000-01-01"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

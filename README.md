@@ -1,6 +1,6 @@
 # Oikonomos
 
-> A self-hosted personal planner with AI chat, Google Calendar sync, and Gmail analysis — all running locally.
+> A self-hosted personal planner with AI chat, Google Calendar sync, Gmail analysis, and offline PWA support — all running locally.
 
 ---
 
@@ -30,6 +30,13 @@
 - Highlights urgent items, deadlines, and key information
 - **Custom email summary prompt** configurable in Settings
 
+### 📱 Offline PWA (iOS & Android)
+- **Add to Home Screen** from Safari (iOS) or Chrome (Android) for a fullscreen native-like experience
+- **Offline reads** — Workbox caches the app shell and all API responses; browse tasks and events without a connection
+- **Offline writes** — mutations made while offline are queued to `localStorage` and automatically replayed when connectivity returns
+- **Sync banner** shows how many changes are pending while disconnected
+- See [PWA Setup](#pwa-setup-ios) for HTTPS configuration
+
 ### 🔄 Google Calendar Sync
 - Bidirectional sync with Google Calendar over a 90-day window
 - Optionally sync tasks as all-day events
@@ -47,6 +54,7 @@
 | Database | SQLite (via `sqlite3`) |
 | AI | Ollama (`qwen2.5:14b`) |
 | Google APIs | Calendar v3 · Gmail v1 |
+| PWA / Offline | vite-plugin-pwa + Workbox |
 | Containerisation | Docker + Docker Compose |
 
 ---
@@ -158,6 +166,41 @@ Docker environment variables:
 
 ---
 
+## PWA Setup (iOS)
+
+Service workers require HTTPS. The recommended approach uses **Tailscale** (which you likely already have for remote access) to provide a trusted TLS certificate without any manual cert management.
+
+### 1. Enable HTTPS Certificates in Tailscale
+
+In the [Tailscale admin console](https://login.tailscale.com/admin/dns) → **DNS** → enable **HTTPS Certificates**.
+
+### 2. Register Tailscale serve
+
+```bash
+tailscale serve --https=8443 http://localhost:3001
+```
+
+This tells Tailscale to terminate TLS on port 8443 of your `<machine>.ts.net` hostname and forward to the app. The config persists across reboots.
+
+### 3. Add to Home Screen on iPhone
+
+1. Install **Tailscale** on your iPhone and connect to your tailnet
+2. Open **Safari** and navigate to `https://<machine>.ts.net:8443`
+3. Tap **Share → Add to Home Screen**
+
+The app launches fullscreen with no browser chrome. On first open it caches the current month's data for offline use.
+
+### Offline behaviour
+
+| Action | Behaviour |
+|---|---|
+| Browse tasks/events (offline) | Served from Workbox cache (up to 7 days old) |
+| Create/edit/delete (offline) | Queued in `localStorage`, banner shows pending count |
+| Reconnect | Queue replays automatically, view refreshes |
+| Chat / Email analysis (offline) | Not queued — requires live server |
+
+---
+
 ## Architecture
 
 ```
@@ -165,9 +208,10 @@ frontend/src/
   App.jsx              # Root — owns month/date state, fetches tasks & events
   components/          # Calendar, DayTasks, DayEvents, ChatPage, SummaryPage, SettingsPage …
   api/
-    client.js          # Task & event HTTP calls
+    client.js          # Task & event HTTP calls (offline-queue-aware)
     settingsClient.js  # Settings, Google auth, email analysis calls
   state/tasks.js       # Pure state-transform helpers (no store)
+  offlineQueue.js      # localStorage queue for offline mutations + flush logic
 
 backend/src/
   server.js            # Express app + route registration

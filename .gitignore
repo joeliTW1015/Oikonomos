@@ -3,3 +3,7 @@ backend/data.sqlite
 data/data.sqlite
 client_secret*.json
 .claude/
+certs/
+*.crt
+*.key
+frontend/dist/

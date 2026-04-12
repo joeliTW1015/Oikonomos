@@ -153,8 +153,10 @@ router.post("/", async (req, res, next) => {
       "INSERT INTO tasks (title, description, date, status, completed) VALUES (?, ?, ?, 'pending', 0)",
       [String(title).trim(), description ? String(description).trim() : null, String(date)]
     );
-    // Use lastID as initial position so new tasks always sort to the end
-    await run("UPDATE tasks SET position = ? WHERE id = ?", [result.lastID, result.lastID]);
+    // Assign position below the current minimum so new tasks sort to the top
+    const minRow = await get("SELECT MIN(COALESCE(position, id)) AS minPos FROM tasks WHERE date = ? AND id != ?", [String(date), result.lastID]);
+    const newPosition = minRow && minRow.minPos != null ? minRow.minPos - 1 : 0;
+    await run("UPDATE tasks SET position = ? WHERE id = ?", [newPosition, result.lastID]);
 
     const tagIds = await ensureTags(tags);
     for (const tagId of tagIds) {

@@ -173,10 +173,10 @@ export default function App() {
   const handleAdd = async (payload) => {
     try {
       const created = await createTask(payload);
-      setTasks((prev) => [...prev, created]);
+      setTasks((prev) => [created, ...prev]);
     } catch (err) {
       if (err instanceof OfflineQueuedError) {
-        setTasks((prev) => [...prev, { ...payload, id: `temp_${Date.now()}`, _offline: true }]);
+        setTasks((prev) => [{ ...payload, id: `temp_${Date.now()}`, _offline: true }, ...prev]);
         setPendingCount(getQueue().length);
       } else {
         throw err;

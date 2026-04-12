@@ -14,6 +14,7 @@ const authRouter = require("./routes/auth");
 const settingsRouter = require("./routes/settings");
 const syncRouter = require("./routes/sync");
 const emailRouter = require("./routes/email");
+const habitsRouter = require("./routes/habits");
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/settings", settingsRouter);
 app.use("/api/sync", syncRouter);
 app.use("/api/email", emailRouter);
+app.use("/api/habits", habitsRouter);
 
 const distPath = path.join(__dirname, "..", "frontend-dist");
 if (fs.existsSync(distPath)) {

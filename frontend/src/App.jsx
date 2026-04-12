@@ -6,6 +6,7 @@ import ShoppingList from "./components/ShoppingList.jsx";
 import GoalList from "./components/GoalList.jsx";
 import LongTermTodos from "./components/LongTermTodos.jsx";
 import ChatPage from "./components/ChatPage.jsx";
+import HabitList from "./components/HabitList.jsx";
 import SummaryPage from "./components/SummaryPage.jsx";
 import SettingsPage from "./components/SettingsPage.jsx";
 import NavBar from "./components/NavBar.jsx";
@@ -348,6 +349,7 @@ export default function App() {
                   onUpdate={handleUpdateEvent}
                   onDelete={handleDeleteEvent}
                 />
+                <HabitList key={selectedDate} date={selectedDate} />
               </section>
               <div className="app__secondary">
                 <LongTermTodos />

@@ -166,6 +166,30 @@ export async function deleteLongTermTodo(id) {
   return request(`/long-term-todos/${id}`, { method: "DELETE" });
 }
 
+export async function fetchHabits(date) {
+  return request(`/habits?date=${encodeURIComponent(date)}`);
+}
+
+export async function fetchAllHabits() {
+  return request("/habits/all");
+}
+
+export async function createHabit(payload) {
+  return request("/habits", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export async function updateHabit(id, payload) {
+  return request(`/habits/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+}
+
+export async function deleteHabit(id) {
+  return request(`/habits/${id}`, { method: "DELETE" });
+}
+
+export async function toggleHabitCompletion(id, date) {
+  return request(`/habits/${id}/toggle`, { method: "POST", body: JSON.stringify({ date }) });
+}
+
 export async function reorderTasks(ids) {
   return request("/tasks/reorder", {
     method: "PATCH",

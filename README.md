@@ -14,6 +14,7 @@
 - **Tags** — normalized (trimmed, lowercased), attached to tasks and events
 
 ### ✅ Personal Organisation
+- **Habit checklist** — daily and weekly habits tracked per-day; check off as you go
 - **Goals** — track what you're working toward with completion state
 - **Shopping list** — split into *needed* and *wanted*, mark items as got
 - **Long-term todos** — a backlog separate from your daily calendar
@@ -63,15 +64,16 @@
 
 ### Prerequisites
 - [Docker](https://docs.docker.com/get-docker/) + Docker Compose
-- [Ollama](https://ollama.com) running locally with `qwen2.5:14b` pulled:
+- [Ollama](https://ollama.com) running on the host with `qwen2.5:14b` pulled (native install or its own Docker container exposed on port 11434):
   ```bash
   ollama pull qwen2.5:14b
+  # or via Docker: docker exec ollama ollama pull qwen2.5:14b
   ```
 
 ### Start
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/joeliTW1015/Oikonomos.git
 cd Oikonomos
 docker compose up -d
 ```

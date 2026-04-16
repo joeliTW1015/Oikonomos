@@ -329,6 +329,7 @@ export default function App() {
                   onPrevWeek={handlePrevWeek}
                   onNextWeek={handleNextWeek}
                 />
+                <HabitList key={selectedDate} date={selectedDate} />
               </div>
               <section className="app__panel">
                 {loading ? <p className="app__loading">Loading…</p> : null}
@@ -349,7 +350,6 @@ export default function App() {
                   onUpdate={handleUpdateEvent}
                   onDelete={handleDeleteEvent}
                 />
-                <HabitList key={selectedDate} date={selectedDate} />
               </section>
               <div className="app__secondary">
                 <LongTermTodos />

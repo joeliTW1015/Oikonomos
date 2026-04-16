@@ -6,6 +6,7 @@ import ShoppingList from "./components/ShoppingList.jsx";
 import GoalList from "./components/GoalList.jsx";
 import LongTermTodos from "./components/LongTermTodos.jsx";
 import ChatPage from "./components/ChatPage.jsx";
+import HabitList from "./components/HabitList.jsx";
 import SummaryPage from "./components/SummaryPage.jsx";
 import SettingsPage from "./components/SettingsPage.jsx";
 import NavBar from "./components/NavBar.jsx";
@@ -173,10 +174,10 @@ export default function App() {
   const handleAdd = async (payload) => {
     try {
       const created = await createTask(payload);
-      setTasks((prev) => [...prev, created]);
+      setTasks((prev) => [created, ...prev]);
     } catch (err) {
       if (err instanceof OfflineQueuedError) {
-        setTasks((prev) => [...prev, { ...payload, id: `temp_${Date.now()}`, _offline: true }]);
+        setTasks((prev) => [{ ...payload, id: `temp_${Date.now()}`, _offline: true }, ...prev]);
         setPendingCount(getQueue().length);
       } else {
         throw err;
@@ -328,6 +329,7 @@ export default function App() {
                   onPrevWeek={handlePrevWeek}
                   onNextWeek={handleNextWeek}
                 />
+                <HabitList key={selectedDate} date={selectedDate} />
               </div>
               <section className="app__panel">
                 {loading ? <p className="app__loading">Loading…</p> : null}

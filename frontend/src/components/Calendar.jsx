@@ -114,6 +114,10 @@ export default function Calendar({
               const isSelected = isoDate === selectedDate;
               const isToday = isoDate === TODAY;
               const dayTasks = tasksByDate[isoDate] || [];
+              const dayEvents = eventsByDate[isoDate] || [];
+              const hasLocalEvent = dayEvents.some(
+                (e) => !(e.tags || []).includes("from google calendar")
+              );
 
               return (
                 <button
@@ -135,6 +139,9 @@ export default function Calendar({
                         className={`calendar__task-dot calendar__task-dot--${task.status}`}
                       />
                     ))}
+                    {hasLocalEvent && (
+                      <span className="calendar__event-mark" />
+                    )}
                   </span>
                 </button>
               );

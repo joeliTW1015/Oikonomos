@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ListTodo, Plus, X, Check } from "lucide-react";
 import { fetchLongTermTodos, createLongTermTodo, updateLongTermTodo, deleteLongTermTodo } from "../api/client.js";
 
-export default function LongTermTodos() {
+export default function LongTermTodos({ refreshKey = 0 }) {
   const [todos, setTodos] = useState([]);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
@@ -10,7 +10,7 @@ export default function LongTermTodos() {
 
   useEffect(() => {
     fetchLongTermTodos().then(setTodos).catch(() => {});
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     if (adding) inputRef.current?.focus();

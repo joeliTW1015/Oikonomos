@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import Calendar from "./components/Calendar.jsx";
 import DayTasks from "./components/DayTasks.jsx";
 import DayEvents from "./components/DayEvents.jsx";
@@ -28,10 +29,13 @@ export default function App() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const monthKey = useMemo(() => toMonthKey(monthDate), [monthDate]);
   const tasksByDate = useMemo(() => groupTasksByDate(tasks), [tasks]);
   const eventsByDate = useMemo(() => groupEventsByDate(events), [events]);
+
+  const handleRefresh = () => setRefreshKey((k) => k + 1);
 
   useEffect(() => {
     let isActive = true;
@@ -46,7 +50,7 @@ export default function App() {
       .catch((err) => { if (!isActive) return; setError(err.message || "Failed to load"); })
       .finally(() => { if (!isActive) return; setLoading(false); });
     return () => { isActive = false; };
-  }, [monthKey]);
+  }, [monthKey, refreshKey]);
 
   const handlePrevMonth = () => {
     const next = new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1);
@@ -106,9 +110,18 @@ export default function App() {
           <h1>Oikonomos</h1>
           <span className="app__header-sub">Your personal planner</span>
         </div>
+        <button
+          className={"app__refresh-btn" + (loading ? " app__refresh-btn--spinning" : "")}
+          onClick={handleRefresh}
+          disabled={loading}
+          title="同步資料"
+        >
+          <RefreshCw size={15} />
+          同步
+        </button>
       </header>
 
-      <GoalList />
+      <GoalList refreshKey={refreshKey} />
 
       <main className="app__main">
         <div className="app__left">
@@ -121,8 +134,8 @@ export default function App() {
             onPrevMonth={handlePrevMonth}
             onNextMonth={handleNextMonth}
           />
-          <LongTermTodos />
-          <ShoppingList />
+          <LongTermTodos refreshKey={refreshKey} />
+          <ShoppingList refreshKey={refreshKey} />
         </div>
         <section className="app__panel">
           {loading ? <p className="app__loading">Loading…</p> : null}

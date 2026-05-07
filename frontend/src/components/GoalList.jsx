@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Target, Plus, X, Check } from "lucide-react";
 import { fetchGoals, createGoal, updateGoal, deleteGoal } from "../api/client.js";
 
-export default function GoalList() {
+export default function GoalList({ refreshKey = 0 }) {
   const [goals, setGoals] = useState([]);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
@@ -10,7 +10,7 @@ export default function GoalList() {
 
   useEffect(() => {
     fetchGoals().then(setGoals).catch(() => {});
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     if (adding) inputRef.current?.focus();

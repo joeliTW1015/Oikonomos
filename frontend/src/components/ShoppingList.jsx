@@ -7,14 +7,14 @@ import {
   deleteShoppingItem
 } from "../api/client.js";
 
-export default function ShoppingList() {
+export default function ShoppingList({ refreshKey = 0 }) {
   const [items, setItems] = useState([]);
   const [name, setName] = useState("");
   const [type, setType] = useState("needed");
 
   useEffect(() => {
     fetchShoppingItems().then(setItems).catch(() => {});
-  }, []);
+  }, [refreshKey]);
 
   const handleAdd = async (e) => {
     e.preventDefault();

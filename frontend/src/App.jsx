@@ -10,6 +10,7 @@ import HabitList from "./components/HabitList.jsx";
 import SummaryPage from "./components/SummaryPage.jsx";
 import SettingsPage from "./components/SettingsPage.jsx";
 import NavBar from "./components/NavBar.jsx";
+import { RefreshCw } from "lucide-react";
 import { createTask, deleteTask, fetchTasks, updateTask, reorderTasks, fetchEvents, createEvent, updateEvent, deleteEvent, OfflineQueuedError } from "./api/client.js";
 import { groupTasksByDate, groupEventsByDate } from "./state/tasks.js";
 import { getGoogleStatus, triggerSync } from "./api/settingsClient.js";
@@ -45,6 +46,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [isOnline, setIsOnline] = useState(() => navigator.onLine);
   const [pendingCount, setPendingCount] = useState(() => getQueue().length);
+  const [syncing, setSyncing] = useState(false);
 
   const monthKey = useMemo(() => toMonthKey(monthDate), [monthDate]);
   const tasksByDate = useMemo(() => groupTasksByDate(tasks), [tasks]);
@@ -292,6 +294,24 @@ export default function App() {
       .finally(() => setLoading(false));
   };
 
+  const handleManualSync = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    try {
+      const dedup = (arr) => [...new Map(arr.map((x) => [x.id, x])).values()];
+      const results = await Promise.all(fetchKeys.flatMap((mk) => [fetchTasks(mk), fetchEvents(mk)]));
+      const allTasks = dedup(fetchKeys.flatMap((_, i) => results[i * 2]));
+      const allEvents = dedup(fetchKeys.flatMap((_, i) => results[i * 2 + 1]));
+      setTasks(allTasks);
+      setEvents(allEvents);
+      setError(null);
+    } catch (err) {
+      setError(err.message || "Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const dayTasks = tasksByDate[selectedDate] || [];
   const dayEvents = eventsByDate[selectedDate] || [];
 
@@ -308,6 +328,15 @@ export default function App() {
           <h1>Oikonomos</h1>
           <span className="app__header-sub">Your personal planner</span>
         </div>
+        <button
+          className={"sync-btn" + (syncing ? " sync-btn--spinning" : "")}
+          onClick={handleManualSync}
+          disabled={syncing}
+          title="同步線上資料"
+        >
+          <RefreshCw size={18} />
+          <span className="sync-btn__label">{syncing ? "同步中…" : "同步"}</span>
+        </button>
       </header>
 
       <div className={`page-content${activePage === "chat" ? " page-content--chat" : ""}`}>
